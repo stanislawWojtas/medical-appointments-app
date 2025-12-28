@@ -1,0 +1,45 @@
+# --- Zależności (dla obu folderów: client i server) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Budowanie i dystrybucja (Build) ---
+# Folder budowania dla Frontendu (React/Vite/CRA)
+/client/dist/
+/client/build/
+# Folder kompilacji dla Backendu (jeśli używasz TS w Node)
+/server/dist/
+/server/build/
+
+# --- Zmienne środowiskowe i klucze (BARDZO WAŻNE) ---
+# To zabezpiecza Cię przed wysłaniem haseł do Gita (Lab 11/12)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# --- IDE i System operacyjny (pliki śmieciowe) ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Testy i Coverage ---
+coverage/
+.nyc_output/
+
+# --- Pliki lokalne Lab 10/11 ---
+# Opcjonalnie: Jeśli Twój lokalny plik JSON (Lab 10) zmienia się
+# przy każdym kliknięciu w aplikacji i nie chcesz tych zmian w historii Gita,
+# możesz go tu dodać. Ale zazwyczaj lepiej go zostawić, żeby prowadzący miał dane startowe.
+# *.json 
+
+# --- Firebase (Lab 11) ---
+.firebase/
+firebase-debug.log
