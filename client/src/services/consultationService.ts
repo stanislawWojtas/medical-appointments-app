@@ -1,14 +1,12 @@
 import { endOfDay, startOfDay } from "date-fns";
-import { api, ENDPOINTS } from "../api/axiosInstance";
-import type { Absence } from "../models/Absence";
 import type { Appointment, AppointmentType } from "../models/Appointment";
-import type { Doctor } from "../models/Doctor";
 import type { IDataProvider } from "./IDataProvider";
 import { FirebaseDataProvider } from "./FirebaseDataProvider";
+import { NodeDataProvider } from "./NodeJsDataProvider";
 
-const USE_FIREBASE = true; // TODO: Na razie jest true/false ale domyślnie będzie firebase/node/json-server
+const USE_FIREBASE = false; // TODO: Na razie jest true/false ale domyślnie będzie firebase/node/json-server
 
-const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : null; // TODO: dodać inne implementacje IDataProvider
+const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider(); // TODO: dodać inne implementacje IDataProvider
 
 
 export const getAppointmentsByDates = async (startDate: Date, endDate: Date, doctorId: string) => {
@@ -25,12 +23,10 @@ export const createAvailability = async (doctorId: string, date: Date) => {
 		status: "AVAILABLE",
 		price: 0
 	};
-
-	const optimisticSlot = {...newSlot, id: Math.random().toString()} //używamy tymczasowego id do wyświetlenia w UI od razu
 	
-	await dataProvider.addAvailability([newSlot] as Appointment[]);
+	const createdAppointments = await dataProvider.addAvailability([newSlot] as Appointment[]);
 
-	return optimisticSlot;
+	return createdAppointments[0]; // zwracamy pierwsze (i jedyne) utworzone appointment z prawdziwym ID
 
 }
 
@@ -44,7 +40,7 @@ export const addAbsence = async (doctorId: string, startDate: Date, endDate: Dat
 	// zamiana żeby nieobecność obejmowała całe dni
 	startDate = startOfDay(startDate);
 	endDate = endOfDay(endDate);
-	await dataProvider.addAbsence(doctorId, startDate, endDate, reason);
+	return await dataProvider.addAbsence(doctorId, startDate, endDate, reason);
 }
 
 export const getAbsences = async (doctorId: string) => {
@@ -65,6 +61,5 @@ export const reserveAppointment = async(id: string, visitType: AppointmentType, 
 		gender: gender,
 		notes: note
 	};
-	await dataProvider.bookAppointment(id, patientData, visitType);
-	return true;
+	return await dataProvider.bookAppointment(id, patientData, visitType);
 }

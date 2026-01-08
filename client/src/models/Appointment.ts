@@ -15,11 +15,5 @@ export interface Appointment {
 	type?: AppointmentType;
 
 	// dane pacjenta
-	patientData?: {
-		firstName: string;
-		lastName: string;
-		age: number;
-		gender: 'male' | 'female';
-		notes?: string; // dodatkowe notatki lekarza
-	};
+	patientData?: IpatientData;
 }

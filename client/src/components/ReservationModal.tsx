@@ -1,14 +1,15 @@
 import { Button, DialogBackdrop, DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogPositioner, DialogRoot, Input, RadioGroup, RadioGroupRoot, SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValueText, Stack, Text, Textarea, createListCollection } from "@chakra-ui/react";
 import { useState } from "react";
 import { reserveAppointment } from "../services/consultationService";
-import type { AppointmentType } from "../models/Appointment";
+import type { Appointment, AppointmentType } from "../models/Appointment";
 
 type ReservationModalProps = {
 	isOpen:boolean;
 	onClose: () => void;
 	appointmentId: string;
+	onSuccess?: (updatedAppointment: Appointment) => void;
 }
-const ReservationModal = ({isOpen, onClose, appointmentId}: ReservationModalProps) => {
+const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess}: ReservationModalProps) => {
     const [visitType, setVisitType] = useState<AppointmentType | undefined>(undefined);
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');
@@ -49,7 +50,10 @@ const ReservationModal = ({isOpen, onClose, appointmentId}: ReservationModalProp
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) return;
         
-        await reserveAppointment(appointmentId, visitType, firstName, lastName, gender, ageNum, note);
+        const updatedAppointment = await reserveAppointment(appointmentId, visitType, firstName, lastName, gender, ageNum, note);
+        if (onSuccess) {
+            onSuccess(updatedAppointment);
+        }
         onClose();
     };
 

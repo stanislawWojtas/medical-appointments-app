@@ -10,8 +10,8 @@ import type { Absence } from "../models/Absence";
 
 const DoctorDashboard = () => {
 
-	// 
-	const doctorId = '1';
+	// TODO: Wyrzucić to potem
+	const doctorId = '695e390555f7f9c4ae10d500';
 	// modale: osobne sterowanie dla nieobecności i dostępności
 	const { open: isAbsenceOpen, onOpen: onAbsenceOpen, onClose: onAbsenceClose } = useDisclosure();
 	const { open: isAvailabilityOpen, setOpen: setAvailabilityOpen, onOpen: onAvailabilityOpen } = useDisclosure();
@@ -35,10 +35,9 @@ const DoctorDashboard = () => {
 	}
 	const handleNewAbsence = async (startDate: Date, endDate: Date, reason?: string) => {
 		try{
-			await addAbsence(doctorId, startDate, endDate, reason);
-			// po dodaniu ponownie pobierz listę, żeby mieć zawsze tablicę
-			const refreshed = await getAbsences(doctorId);
-			setAbsences(refreshed);
+			const newAbsence = await addAbsence(doctorId, startDate, endDate, reason);
+			// dodaj nowy absence do state'u zamiast pobierać wszystkie ponownie
+			setAbsences(prev => [...prev, newAbsence]);
 		}catch(error){
 			console.log("Failed to add absence: ", error)
 		}finally{
@@ -60,7 +59,7 @@ const DoctorDashboard = () => {
 						</Flex>
 					</Flex>
 					{/* TODO: zmień hard codowane 1 */}
-					<DoctorCalendar isDoctor={true} doctorId={'1'} absences={absences}/>
+					<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences}/>
 				</Box>
 			</Flex>
 			{/* modals */}

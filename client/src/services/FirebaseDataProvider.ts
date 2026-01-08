@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, query, runTransaction, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, query, runTransaction, where } from "firebase/firestore";
 import type { Doctor } from "../models/Doctor";
 import type { IDataProvider } from "./IDataProvider";
 import { db } from "../firebaseConfig";
@@ -38,11 +38,13 @@ export class FirebaseDataProvider implements IDataProvider {
 		return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Appointment);
 	}
 
-	async addAvailability(newSlots: Appointment[]): Promise<void> {
+	async addAvailability(newSlots: Appointment[]): Promise<Appointment[]> {
 		const batch = writeBatch(db);
+		const refs: any[] = [];
 
 		newSlots.forEach(slot => {
 			const ref = doc(collection(db, "appointments"));
+			refs.push(ref);
 			batch.set(ref, {
 				doctorId: slot.doctorId,
 				date: slot.date,
@@ -53,6 +55,20 @@ export class FirebaseDataProvider implements IDataProvider {
 		})
 
 		await batch.commit();
+
+		// Pobierz utworzone dokumenty
+		const createdAppointments: Appointment[] = await Promise.all(
+			refs.map(async (ref) => {
+				const snapshot = await getDoc(ref);
+				if (!snapshot.exists()) {
+					throw new Error("Failed to retrieve created appointment");
+				}
+				const data = snapshot.data() as Record<string, any>;
+				return { id: snapshot.id, ...data } as Appointment;
+			})
+		);
+
+		return createdAppointments;
 	}
 
 	async removeAppointment(appointmentId: string): Promise<void> {
@@ -61,10 +77,10 @@ export class FirebaseDataProvider implements IDataProvider {
 	}
 
 	// TODO: Przemyśl jakie id pacjenta ma być w appointment i dodaj potem
-	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<void> {
+	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<Appointment> {
 		
 		// transaction żeby sprawdzić czy przypadkiem wizyta nie jest już zarezerwowana
-		await runTransaction(db, async (transaction) => {
+		const updatedAppointment = await runTransaction(db, async (transaction) => {
 			const ref = doc(db, "appointments", appointmentId);
 			const snapshot = await transaction.get(ref);
 			if(!snapshot.exists()){
@@ -79,8 +95,18 @@ export class FirebaseDataProvider implements IDataProvider {
 				status: "BOOKED",
 				patientData: patientData,
 				type: visitType
-			})
+			});
+
+			return {
+				...appointment,
+				id: appointmentId,
+				status: "BOOKED",
+				patientData: patientData,
+				type: visitType
+			} as Appointment;
 		});
+
+		return updatedAppointment;
 	}
 
 	async getAbsences(doctorId: string): Promise<Absence[]> {
@@ -94,8 +120,8 @@ export class FirebaseDataProvider implements IDataProvider {
 	}
 
 
-	async addAbsence(doctorId: string, startDate: Date, endDate: Date, reason?: string): Promise<void> {
-		await addDoc(collection(db, "absences"), {
+	async addAbsence(doctorId: string, startDate: Date, endDate: Date, reason?: string): Promise<Absence> {
+		const docRef = await addDoc(collection(db, "absences"), {
 			doctorId,
 			startDate: startDate.toISOString(),
 			endDate: endDate.toISOString(),
@@ -114,5 +140,13 @@ export class FirebaseDataProvider implements IDataProvider {
 			}
 		})
 		await batch.commit();
+
+		// Zwracamy utworzony absence
+		const snapshot = await getDoc(docRef);
+		if (!snapshot.exists()) {
+			throw new Error("Failed to retrieve created absence");
+		}
+		const data = snapshot.data() as Record<string, any>;
+		return { id: snapshot.id, ...data } as Absence;
 	}
 }

@@ -9,13 +9,13 @@ export interface IDataProvider {
 	getDoctorById(id: string): Promise<Doctor | undefined>;
 	
 	getAppointments(doctorId: string, startDate: Date, endDate: Date): Promise<Appointment[]>;
-	addAvailability(newSlots: Appointment[]): Promise<void>;
+	addAvailability(newSlots: Appointment[]): Promise<Appointment[]>;
 	removeAppointment(appointmentId: string): Promise<void>;
 	// TODO: wytwórz interfejs patientData i zmien formularz żeby przesyłał ten interfejs a nie wszystko osobno
-	bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<void>;
+	bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<Appointment>;
 
 	getAbsences(doctorId: string): Promise<Absence[]>
 	// TODO: zmień dane absence na jakiś jeden interfejs
-	addAbsence(doctorId: string, startDate: Date, endDate: Date, reason?: string): Promise<void>
+	addAbsence(doctorId: string, startDate: Date, endDate: Date, reason?: string): Promise<Absence>
 
 }

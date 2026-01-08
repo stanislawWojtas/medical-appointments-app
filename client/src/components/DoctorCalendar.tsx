@@ -113,6 +113,12 @@ const DoctorCalendar = ({doctorId, isDoctor, absences}: DoctorCalendarProps) => 
 			setAppointments((prev => prev.filter(a => a.id !== appointmentId)))
 		}
 	}
+
+	const handleBookingSuccess = (updatedAppointment: Appointment) => {
+		setAppointments(prev => prev.map(a => 
+			a.id === updatedAppointment.id ? updatedAppointment : a
+		));
+	}
 	
 
 	return(
@@ -186,7 +192,7 @@ const DoctorCalendar = ({doctorId, isDoctor, absences}: DoctorCalendarProps) => 
 					))}
 				</Flex>
 			</Flex>
-			<ReservationModal isOpen={open} onClose={onClose} appointmentId={selectedAppointmentId}/>
+			<ReservationModal isOpen={open} onClose={onClose} appointmentId={selectedAppointmentId} onSuccess={handleBookingSuccess}/>
 		</>
 	)
 }
