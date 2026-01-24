@@ -160,6 +160,10 @@ const DoctorCalendar = ({doctorId, isDoctor, absences}: DoctorCalendarProps) => 
 									const d = new Date(a.date);
 									return d >= slotStart && d < slotEnd;
 								})
+								
+								// Sprawdź czy ten slot jest częścią większego appointmentu (BLOCKED)
+								const isPartOfLongerAppointment = appointment && (appointment.status === 'BLOCKED' || (appointment.duration && appointment.duration > 1 && new Date(appointment.date).getTime() !== slotStart.getTime()));
+								
 								return(
 								<GridItem
 									key={idx}
@@ -171,7 +175,7 @@ const DoctorCalendar = ({doctorId, isDoctor, absences}: DoctorCalendarProps) => 
 									_hover={isAbsence ? undefined : { bg: 'blue.50' }}
 									bg={isAbsence ? 'red.200' : isToday(day) ? 'yellow.100' : undefined}
 								>
-									{appointment ? <Consultation a={appointment} isDoctor={isDoctor} handleRemoveAvailability={handleRemoveAvailability} handlePatientClick={() => handlePatientClick(appointment.id, appointment.status)}/> : ( !isAbsence && !isPast(slotStart) && isDoctor &&
+									{appointment && !isPartOfLongerAppointment ? <Consultation a={appointment} isDoctor={isDoctor} handleRemoveAvailability={handleRemoveAvailability} handlePatientClick={() => handlePatientClick(appointment.id, appointment.status)}/> : ( !isAbsence && !isPast(slotStart) && isDoctor && !appointment &&
 										<Text color={'gray.400'} cursor={"pointer"} onClick={() => handleAddAvailability(slotStart)}>Add availability</Text>
 										)}
 									{isCurrentSlot && (

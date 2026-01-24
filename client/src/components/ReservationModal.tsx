@@ -16,6 +16,7 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess}: Reservati
     const [gender, setGender] = useState<'male' | 'female'>();
     const [age, setAge] = useState<string>('');
     const [note, setNote] = useState('');
+    const [slots, setSlots] = useState(1);
     
     // Dodaj stany błędów
     const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -50,7 +51,7 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess}: Reservati
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) return;
         
-        const updatedAppointment = await reserveAppointment(appointmentId, visitType, firstName, lastName, gender, ageNum, note);
+        const updatedAppointment = await reserveAppointment(appointmentId, visitType, firstName, lastName, gender, ageNum, slots, note);
         if (onSuccess) {
             onSuccess(updatedAppointment);
         }
@@ -126,6 +127,10 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess}: Reservati
                                         </Stack>
                                     </RadioGroupRoot>
                                     {errors.gender && <Text color="red.500" fontSize="sm">{errors.gender}</Text>}
+                                </Stack>
+                                <Stack>
+                                    <Text fontWeight={'medium'}>Number of slots</Text>
+                                    <Input type="number" value={slots} min={1} onChange={(e) => setSlots(Number (e.target.value) || 1)} />
                                 </Stack>
                                 <Stack gap={1}>
                                     <Text>Additional information (optional)</Text>

@@ -23,11 +23,13 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
      {a: Appointment, isDoctor:boolean, handlePatientClick: () => void, handleRemoveAvailability: (id: string) => void}) => {
 
     const isPast:boolean = new Date(a.date) < new Date();
+    const height = `calc(${a.duration * 100}% - 8px)`; // 4px dla padding/margines
 
     const getTypeColor = (type?: AppointmentType) => {
         if (!type) return 'green.500';
         return typeDoctorColor[type];
     }
+
     
 
     return(
@@ -38,7 +40,12 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                 <Tooltip.Trigger asChild>
                     <Flex
                         m={0}
-                        h="100%"
+                        h={height}
+                        position={"absolute"}
+                        top={"4px"}
+                        left={"4px"}
+                        right={"4px"}
+                        zIndex={a.duration > 1 ? 10 : 1}
                         bg={(isPast || a.status ==="CANCELED") ? 'gray.300' : getTypeColor(a.type)}
                         cursor="pointer"
                         borderRadius="lg"
@@ -91,7 +98,12 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
             </Tooltip.Root>) : (
                 <Flex
                         m={0}
-                        h="100%"
+                        h={height}
+                        position={"absolute"}
+                        top={"4px"}
+                        left={"4px"}
+                        right={"4px"}
+                        zIndex={a.duration > 1 ? 10 : 1}
                         bg={isPast ? 'gray.300' : statusColor[a.status]}
                         cursor="pointer"
                         borderRadius="lg"

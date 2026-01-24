@@ -44,8 +44,8 @@ export class NodeDataProvider implements IDataProvider {
 		await this.api.delete(`/appointments/${appointmentId}`);
 	}
 
-	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<Appointment> {
-		const response = await this.api.put(`/appointments/${appointmentId}/book`, {patientData: patientData, visitType: visitType});
+	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType, duration: number): Promise<Appointment> {
+		const response = await this.api.put(`/appointments/${appointmentId}/book`, {patientData: patientData, visitType: visitType, duration: duration});
 		return response.data;
 	}
 

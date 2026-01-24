@@ -53,7 +53,7 @@ export const getDoctorById = async (id: string) => {
 
 
 
-export const reserveAppointment = async(id: string, visitType: AppointmentType, firstName: string, lastName:string, gender:'male'|'female', age: number, note:string) => {
+export const reserveAppointment = async(id: string, visitType: AppointmentType, firstName: string, lastName:string, gender:'male'|'female', age: number, slotsNum: number,  note:string) => {
 	const patientData = {
 		firstName: firstName,
 		lastName: lastName,
@@ -61,5 +61,5 @@ export const reserveAppointment = async(id: string, visitType: AppointmentType, 
 		gender: gender,
 		notes: note
 	};
-	return await dataProvider.bookAppointment(id, patientData, visitType);
+	return await dataProvider.bookAppointment(id, patientData, visitType, slotsNum);
 }

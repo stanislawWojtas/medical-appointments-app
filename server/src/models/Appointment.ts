@@ -15,7 +15,7 @@ export interface IAppointment extends Document{
 	duration: number;
 
 	price: number;
-	status: 'AVAILABLE' | 'BOOKED' | 'CANCELED' | 'COMPLETED';
+	status: 'AVAILABLE' | 'BOOKED' | 'CANCELED' | 'COMPLETED' | 'BLOCKED';
 	type?: 'FIRST_VISIT' | 'FOLLOW_UP' | 'CONSULTATION' | 'PRESCRIPTION' | 'TELEVISIT' | 'CHRONIC_CARE' | 'DIAGNOSTIC';
 
 	patientData?: IPatientData;
@@ -29,7 +29,7 @@ const AppointmentSchema: Schema = new Schema({
 	price: {type: Number, required: true},
 	status: {
 		type: String,
-		enum: ['AVAILABLE', 'BOOKED', 'CANCELED', 'COMPLETED'],
+		enum: ['AVAILABLE', 'BOOKED', 'CANCELED', 'COMPLETED', 'BLOCKED'],
 		default: 'AVAILABLE'
 	},
 	type: {

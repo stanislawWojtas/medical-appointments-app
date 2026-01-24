@@ -5,6 +5,7 @@ import { db } from "../firebaseConfig";
 import type { Appointment, AppointmentType } from "../models/Appointment";
 import { deleteDoc, writeBatch } from "firebase/firestore";
 import type { Absence } from "../models/Absence";
+import { DataListItem } from "@chakra-ui/react";
 
 // klasa adapter do obsługi różnych backendów
 export class FirebaseDataProvider implements IDataProvider {
@@ -77,7 +78,7 @@ export class FirebaseDataProvider implements IDataProvider {
 	}
 
 	// TODO: Przemyśl jakie id pacjenta ma być w appointment i dodaj potem
-	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<Appointment> {
+	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType, duration: number): Promise<Appointment> {
 		
 		// transaction żeby sprawdzić czy przypadkiem wizyta nie jest już zarezerwowana
 		const updatedAppointment = await runTransaction(db, async (transaction) => {
@@ -149,4 +150,13 @@ export class FirebaseDataProvider implements IDataProvider {
 		const data = snapshot.data() as Record<string, any>;
 		return { id: snapshot.id, ...data } as Absence;
 	}
+
+	// // funkcja pomocnicza do sprawdzenia czy nie ma kolizji między terminami
+	// async checkCollision(date: Date, duration: number){
+	// 	const newEnd = this.getEndDate(date, duration);
+	// }
+
+	// getEndDate(date: Date, duration: number){
+	// 	return new Date(date.getTime() + duration * 30 * 60000);
+	// }
 }

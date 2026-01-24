@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { getAppointmentsByDoctorAndDates } from "../services/appointmentService";
 import Appointment, { IAppointment, IPatientData } from '../models/Appointment';
+import mongoose from "mongoose";
+
+type VisitType = Exclude<IAppointment["type"], undefined>;
 
 
 export const getAppointments = async (request: Request, response: Response) => {
@@ -55,24 +58,71 @@ export const removeAppointment = async (request: Request, response: Response) =>
 }
 
 export const bookAppointment = async (request: Request, response: Response) => {
+
+    // ta metoda może wymagać wielu operacji na bazie więc używamy transakcji żeby było bezpiecznie
+    const session = await mongoose.startSession();
+
     try {
+        session.startTransaction();
+
         const { id } = request.params;
-        const { patientData, visitType }: { patientData: IPatientData, visitType: string } = request.body;
+        const { patientData, visitType, duration }: { patientData: IPatientData; visitType: VisitType; duration: number } = request.body;
         if (!patientData || !visitType) {
+            await session.abortTransaction();
             return response.status(400).json({ message: "Invalid input: expected non-empty patientData and visitType" });
         }
-        const appointment = await Appointment.findOneAndUpdate(
-            { _id: id, status: 'AVAILABLE' },  // musi być dodatkowo 'AVAILABLE' - to rozwiązuje problem dwóch rezerwacji w tym samym czasie
-            { $set: { patientData, type: visitType, status: 'BOOKED' } },
-            { new: true }
-        );
-        if (!appointment) {
-            return response.status(404).json({ message: "Appointment not found or already booked" });
+
+        if(!duration || duration < 1 || duration > 8){
+            await session.abortTransaction();
+            return response.status(400).json({message: "Invalid duration. Numebr must be within 1 and 8 slots"})
         }
-        response.status(200).json(appointment);
+        
+        const mainSlot= await Appointment.findById(id).session(session);
+        if(!mainSlot || mainSlot.status !== "AVAILABLE"){
+            await session.abortTransaction();
+            return response.status(400).json({message: "Appointment is not available"});
+        }
+
+        // mechanizm blokowania slotów gdy duration > 1
+        const slotsToBlock = [];
+        if(duration > 1){
+            for(let i = 1 ; i < duration; i++){
+                const nextTime = new Date(mainSlot.date.getTime() + i * 30 * 60000);
+                const nextSlot = await Appointment.findOne({
+                    doctorId: mainSlot.doctorId,
+                    date: nextTime,
+                    status: 'AVAILABLE'
+                }).session(session);
+
+                if(!nextSlot){
+                    await session.abortTransaction();
+                    return response.status(409).json({
+                        message: `Cannot book appointment. Slot at ${nextTime.toLocaleString('pl-PL')} is not available`
+                    });
+                }
+                slotsToBlock.push(nextSlot);
+            }
+        }
+        
+        mainSlot.status = 'BOOKED';
+        mainSlot.patientData = patientData;
+        mainSlot.type = visitType;
+        mainSlot.duration = duration;
+        await mainSlot.save({ session });
+
+        await Promise.all(slotsToBlock.map(slot => {
+            slot.status = 'BLOCKED';
+            return slot.save({ session });
+        }));
+
+
+        await session.commitTransaction();
+        response.status(200).json(mainSlot);
         return;
     } catch (error) {
         response.status(500).json({ message: "Error during booking appointment", error });
         return;
+    } finally{
+        session.endSession();
     }
 }

@@ -1,7 +1,7 @@
 // typ wizyty
 export type AppointmentType = 'FIRST_VISIT' | 'FOLLOW_UP' | 'CONSULTATION' | 'PRESCRIPTION' | 'TELEVISIT' | 'CHRONIC_CARE' | 'DIAGNOSTIC';
 // status wizyty
-export type AppointmentStatus = 'AVAILABLE' | 'BOOKED' | 'CANCELED' | 'COMPLETED';
+export type AppointmentStatus = 'AVAILABLE' | 'BOOKED' | 'CANCELED' | 'COMPLETED' | 'BLOCKED';
 
 export interface Appointment {
 	id: string;

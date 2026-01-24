@@ -12,7 +12,7 @@ export interface IDataProvider {
 	addAvailability(newSlots: Appointment[]): Promise<Appointment[]>;
 	removeAppointment(appointmentId: string): Promise<void>;
 	// TODO: wytwórz interfejs patientData i zmien formularz żeby przesyłał ten interfejs a nie wszystko osobno
-	bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType): Promise<Appointment>;
+	bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType, duration: number): Promise<Appointment>;
 
 	getAbsences(doctorId: string): Promise<Absence[]>
 	// TODO: zmień dane absence na jakiś jeden interfejs
