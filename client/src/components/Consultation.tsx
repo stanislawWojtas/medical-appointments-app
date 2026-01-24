@@ -7,7 +7,8 @@ const statusColor: Record<AppointmentStatus, string> = {
 	BOOKED: 'red.300',
 	AVAILABLE: 'green.300',
 	COMPLETED: 'gray.300',
-	CANCELED: 'gray.300'
+	CANCELED: 'gray.300',
+    BLOCKED: 'white'
 }
 
 const typeDoctorColor: Record<AppointmentType, string> = {
