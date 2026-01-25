@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { getAppointmentsByDoctorAndDates } from "../services/appointmentService";
 import Appointment, { IAppointment, IPatientData } from '../models/Appointment';
-import mongoose from "mongoose";
+import mongoose  from "mongoose";
 
 type VisitType = Exclude<IAppointment["type"], undefined>;
 
@@ -56,6 +56,113 @@ export const removeAppointment = async (request: Request, response: Response) =>
         return;
     }
 }
+
+export const cancelAppointmentByDoctor = async(request: Request, response: Response) =>{
+    const session = await mongoose.startSession();
+    try{
+        session.startTransaction();
+
+        const {id} = request.params;
+        const {reason} = request.body;
+
+        const mainSlot = await Appointment.findById(id).session(session);
+        if(!mainSlot){
+            await session.abortTransaction();
+            return response.status(404).json({message: "Appointment not found"});
+        }
+        if(mainSlot.status !== 'BOOKED'){
+            await session.abortTransaction();
+            return response.status(400).json({message: "Only booked appointments can be canceled"});
+        };
+
+        mainSlot.status = 'CANCELED';
+        if(reason) mainSlot.cancelReason = reason;
+        await mainSlot.save({session})
+
+        // handling spotkań dłuższych niż 30 minut
+        if(mainSlot.duration > 1){
+            for(let i = 1; i < mainSlot.duration; i++){
+                const nextTime = new Date(mainSlot.date.getTime() + i * 30 * 60000);
+                const blockedSlot = await Appointment.findOne({
+                    doctorId: mainSlot.doctorId,
+                    date: nextTime,
+                    status: 'BLOCKED'
+                }).session(session);
+
+                if(blockedSlot){
+                    blockedSlot.status = 'CANCELED';
+                    await blockedSlot.save({session})
+                }
+            }
+        }
+
+        await session.commitTransaction();
+        response.status(200).json(mainSlot);
+        return;
+    }catch(error){
+        await session.abortTransaction();
+        response.status(500).json({message: "Error canceling appointment: ", error});
+        return;
+    }finally{
+        session.endSession();
+    }
+}
+
+export const cancelAppointmentByPatient = async (request: Request, response: Response) => {
+    const session = await mongoose.startSession();
+    try{
+        session.startTransaction();
+
+        const {id} = request.params;
+
+        const mainSlot = await Appointment.findById(id).session(session);
+        if(!mainSlot){
+            await session.abortTransaction();
+            return response.status(404).json({message: "Appointment not found"});
+        }
+
+        if(mainSlot.status !== 'BOOKED'){
+            await session.abortTransaction();
+            return response.status(400).json({message: "Only booked appointments can be canceled"})
+        }
+
+        //zwolnienie slotu głównego
+        mainSlot.status = 'AVAILABLE';
+        mainSlot.patientData = undefined;
+        mainSlot.type = undefined;
+        const duration = mainSlot.duration;
+        mainSlot.duration = 1;
+        await mainSlot.save({session});
+
+        // jeżeli slot jest dłuższy niż 30 min
+        if(duration > 1){
+            for (let i = 0; i < duration; i++){
+                const nextTime = new Date(mainSlot.date.getTime() + i * 30 * 60000);
+                const blockedSlot = await Appointment.findOne({
+                    doctorId: mainSlot.doctorId,
+                    date: nextTime,
+                    status: 'BLOCKED'
+                }).session(session);
+                
+                if (blockedSlot) {
+                    blockedSlot.status = 'AVAILABLE';
+                    await blockedSlot.save({ session });
+                }
+            }
+        }
+
+        await session.commitTransaction();
+        response.status(200).json(mainSlot);
+        return;
+    }catch(error){
+        await session.abortTransaction();
+        response.status(500).json({message: "Error canceling appointment", error});
+        return;
+    }finally{
+        session.endSession();
+    }
+}
+
 
 export const bookAppointment = async (request: Request, response: Response) => {
 

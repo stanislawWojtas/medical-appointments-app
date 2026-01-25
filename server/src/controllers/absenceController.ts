@@ -64,3 +64,32 @@ export const addAbsence = async (request: Request, response: Response) => {
 		(await session).endSession()
 	}
 }
+
+export const removeAbsence = async (request: Request, response: Response) => {
+	try {
+		const { id } = request.params;
+		
+		if (!id) {
+			return response.status(400).json({ message: "Absence ID is required" });
+		}
+
+		const absence = await Absence.findById(id);
+		if (!absence) {
+			return response.status(404).json({ message: "Absence not found" });
+		}
+
+
+		await Appointment.deleteMany({
+			doctorId: absence.doctorId,
+			date: { $gte: absence.startDate, $lte: absence.endDate }
+		});
+
+		await Absence.deleteOne({ _id: id });
+
+		response.status(200).json({ message: "Absence and related appointments removed successfully" });
+		return;
+	} catch (error) {
+		response.status(500).json({ message: "Error removing absence", error });
+		return;
+	}
+}

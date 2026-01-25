@@ -1,7 +1,7 @@
-import { Flex, IconButton, Text, Tooltip } from "@chakra-ui/react";
+import { Button, Flex, IconButton, Text, Tooltip } from "@chakra-ui/react";
 import type { Appointment, AppointmentStatus, AppointmentType } from "../models/Appointment";
 import { FiTrash2 } from "react-icons/fi";
-
+import { FiX } from "react-icons/fi"; // ikona do anulowania
 
 const statusColor: Record<AppointmentStatus, string> = {
 	BOOKED: 'red.300',
@@ -20,8 +20,8 @@ const typeDoctorColor: Record<AppointmentType, string> = {
 	PRESCRIPTION: 'cyan.600',
 	TELEVISIT: 'blue.400',
 }
-const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability}:
-     {a: Appointment, isDoctor:boolean, handlePatientClick: () => void, handleRemoveAvailability: (id: string) => void}) => {
+const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability, onCancelByDoctor, onCancelByPatient}:
+     {a: Appointment, isDoctor:boolean, handlePatientClick: () => void, handleRemoveAvailability: (id: string) => void, onCancelByDoctor?: (appointmentId: string, patientName: string) => void, onCancelByPatient?: (appointmentId: string) => void}) => {
 
     const isPast:boolean = new Date(a.date) < new Date();
     const height = `calc(${a.duration * 100}% - 8px)`; // 4px dla padding/margines
@@ -57,9 +57,25 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                         {a.status === "CANCELED" ? (
                             <Text fontWeight="bold">Canceled</Text>
                         ) : a.status !== "AVAILABLE" ? (
-                            <Text fontSize="sm" fontWeight="bold">
-                                {a.patientData?.firstName} {a.patientData?.lastName}
-                            </Text>
+                            <Flex direction="column" align="center" gap={1}>
+                                <Text fontSize="sm" fontWeight="bold">
+                                    {a.patientData?.firstName} {a.patientData?.lastName}
+                                </Text>
+                                {!isPast && a.status === "BOOKED" && (
+                                    <IconButton
+                                        aria-label="Cancel appointment"
+                                        size="xs"
+                                        colorPalette="red"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onCancelByDoctor?.(a.id, `${a.patientData?.firstName} ${a.patientData?.lastName}`);
+                                        }}
+                                    >
+                                        <FiX />
+                                    </IconButton>
+                                )}
+                            </Flex>
                         ) : (
                             <Flex gap={1} align={'center'}>
                                 <Text fontWeight="bold">Available</Text>
@@ -68,7 +84,7 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                                     size="xs"
                                     variant="ghost"
                                     onClick={(e) => { e.stopPropagation(); handleRemoveAvailability(a.id)}}>
-                                        <FiTrash2 />
+                                    <FiTrash2 />
                                 </IconButton>}
                             </Flex>
                         )}
@@ -117,9 +133,22 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                         {a.status === "CANCELED" ? (
                             <Text fontWeight="bold">Canceled</Text>
                         ) : a.status !== "AVAILABLE" ? (
-                            <Text fontWeight="bold">
-                                Booked
-                            </Text>
+                            <Flex direction="column" align="center" gap={1}>
+                                <Text fontWeight="bold">Booked</Text>
+                                {!isPast && a.status === "BOOKED" && (
+                                    <Button
+                                        size="xs"
+                                        colorPalette="red"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onCancelByPatient?.(a.id);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+                            </Flex>
                         ) : (
                             <Text fontWeight="bold">Available</Text>
                             

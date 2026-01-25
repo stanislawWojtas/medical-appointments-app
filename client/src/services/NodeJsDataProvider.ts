@@ -49,6 +49,16 @@ export class NodeDataProvider implements IDataProvider {
 		return response.data;
 	}
 
+	async cancelAppointmentByDoctor(appointmentId: string, reason?: string): Promise<Appointment> {
+		const response = await this.api.patch(`/appointments/${appointmentId}/cancel-by-doctor`, { reason });
+		return response.data;
+	}
+
+	async cancelAppointmentByPatient(appointmentId: string): Promise<Appointment> {
+		const response = await this.api.patch(`/appointments/${appointmentId}/cancel-by-patient`);
+		return response.data;
+	}
+
 	async getAbsences(doctorId: string): Promise<Absence[]> {
 		const response = await this.api.get('/absences', {
 			params: {doctorId: doctorId}
@@ -65,5 +75,9 @@ export class NodeDataProvider implements IDataProvider {
 			reason: reason
 		});
 		return response.data;
+	}
+
+	async removeAbsence(absenceId: string): Promise<void> {
+		await this.api.delete(`/absences/${absenceId}`);
 	}
 }

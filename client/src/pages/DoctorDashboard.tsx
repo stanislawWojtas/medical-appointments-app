@@ -44,6 +44,11 @@ const DoctorDashboard = () => {
 			onAbsenceClose();
 		}
 	}
+
+	const handleAbsenceRemoved = (absenceId: string) => {
+		setAbsences(prev => prev.filter(a => a.id !== absenceId));
+	};
+
 	return(
 		<>
 			<Flex h={"calc(100% - 72px)"}>
@@ -59,7 +64,7 @@ const DoctorDashboard = () => {
 						</Flex>
 					</Flex>
 					{/* TODO: zmień hard codowane 1 */}
-					<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences}/>
+					<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences} onAbsenceRemoved={handleAbsenceRemoved}/>
 				</Box>
 			</Flex>
 			{/* modals */}

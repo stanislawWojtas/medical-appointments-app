@@ -6,7 +6,7 @@ import { NodeDataProvider } from "./NodeJsDataProvider";
 
 const USE_FIREBASE = false; // TODO: Na razie jest true/false ale domyślnie będzie firebase/node/json-server
 
-const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider(); // TODO: dodać inne implementacje IDataProvider
+const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider(); // TODO: dodać inne implementacje IDataProvider (json-server)
 
 
 export const getAppointmentsByDates = async (startDate: Date, endDate: Date, doctorId: string) => {
@@ -35,6 +35,14 @@ export const removeAppointment = async (id: string) => {
 	return {id};
 }
 
+export const cancelAppointmentByDoctor = async (appointmentId: string, reason?: string) => {
+	return await dataProvider.cancelAppointmentByDoctor(appointmentId, reason);
+}
+
+export const cancelAppointmentByPatient = async (appointmentId: string) => {
+	return await dataProvider.cancelAppointmentByPatient(appointmentId);
+}
+
 // TODO: potem dodaj wysyłanie powiadomień do użytkowników którym anulowano wizyte
 export const addAbsence = async (doctorId: string, startDate: Date, endDate: Date, reason?: string) => {
 	// zamiana żeby nieobecność obejmowała całe dni
@@ -45,6 +53,11 @@ export const addAbsence = async (doctorId: string, startDate: Date, endDate: Dat
 
 export const getAbsences = async (doctorId: string) => {
 	return await dataProvider.getAbsences(doctorId);
+}
+
+export const removeAbsence = async (absenceId: string) => {
+	await dataProvider.removeAbsence(absenceId);
+	return { id: absenceId };
 }
 
 export const getDoctorById = async (id: string) => {

@@ -5,7 +5,6 @@ import { db } from "../firebaseConfig";
 import type { Appointment, AppointmentType } from "../models/Appointment";
 import { deleteDoc, writeBatch } from "firebase/firestore";
 import type { Absence } from "../models/Absence";
-import { DataListItem } from "@chakra-ui/react";
 
 // klasa adapter do obsługi różnych backendów
 export class FirebaseDataProvider implements IDataProvider {
@@ -77,7 +76,6 @@ export class FirebaseDataProvider implements IDataProvider {
 		await deleteDoc(ref);
 	}
 
-	// TODO: Przemyśl jakie id pacjenta ma być w appointment i dodaj potem
 	async bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType, duration: number): Promise<Appointment> {
 		
 		// transaction żeby sprawdzić czy przypadkiem wizyta nie jest już zarezerwowana
@@ -87,27 +85,167 @@ export class FirebaseDataProvider implements IDataProvider {
 			if(!snapshot.exists()){
 				throw new Error("Appointment does not exist");
 			}
-			const appointment = snapshot.data() as Appointment;
-			if(appointment.status !== "AVAILABLE" || appointment.patientData !== undefined){
+			const mainSlot = snapshot.data() as Appointment;
+			if(mainSlot.status !== "AVAILABLE" || mainSlot.patientData !== undefined){
 				throw new Error("Appointment is not available");
+			}
+
+			// Mechanizm blokowania slotów gdy duration > 1
+			const slotsToBlock: Array<{ref: any, slot: Appointment}> = [];
+			if(duration > 1){
+				for(let i = 1; i < duration; i++){
+					const nextTime = new Date(new Date(mainSlot.date).getTime() + i * 30 * 60000);
+					
+					const q = query(
+						collection(db, "appointments"),
+						where("doctorId", "==", mainSlot.doctorId),
+						where("date", "==", nextTime.toISOString()),
+						where("status", "==", "AVAILABLE")
+					);
+					
+					const querySnapshot = await getDocs(q);
+					if(querySnapshot.empty){
+						throw new Error(`Cannot book appointment. Slot at ${nextTime.toLocaleString('pl-PL')} is not available`);
+					}
+					
+					const nextSlotDoc = querySnapshot.docs[0];
+					slotsToBlock.push({
+						ref: doc(db, "appointments", nextSlotDoc.id),
+						slot: {id: nextSlotDoc.id, ...nextSlotDoc.data()} as Appointment
+					});
+				}
 			}
 
 			transaction.update(ref, {
 				status: "BOOKED",
 				patientData: patientData,
-				type: visitType
+				type: visitType,
+				duration: duration
+			});
+
+			slotsToBlock.forEach(({ref}) => {
+				transaction.update(ref, {
+					status: "BLOCKED"
+				});
 			});
 
 			return {
-				...appointment,
+				...mainSlot,
 				id: appointmentId,
 				status: "BOOKED",
 				patientData: patientData,
-				type: visitType
+				type: visitType,
+				duration: duration
 			} as Appointment;
 		});
 
 		return updatedAppointment;
+	}
+
+	async cancelAppointmentByDoctor(appointmentId: string, reason?: string): Promise<Appointment> {
+		return await runTransaction(db, async (transaction) => {
+			const ref = doc(db, "appointments", appointmentId);
+			const snapshot = await transaction.get(ref);
+			
+			if (!snapshot.exists()) {
+				throw new Error("Appointment not found");
+			}
+			
+			const mainSlot = snapshot.data() as Appointment;
+			
+			if (mainSlot.status !== "BOOKED") {
+				throw new Error("Only booked appointments can be canceled");
+			}
+			
+			// Anuluj główny slot
+			transaction.update(ref, {
+				status: "CANCELED",
+				cancelReason: reason || null
+			});
+			
+			// Znajdź i anuluj zablokowane sloty
+			if (mainSlot.duration > 1) {
+				for (let i = 1; i < mainSlot.duration; i++) {
+					const nextTime = new Date(new Date(mainSlot.date).getTime() + i * 30 * 60000);
+					
+					const q = query(
+						collection(db, "appointments"),
+						where("doctorId", "==", mainSlot.doctorId),
+						where("date", "==", nextTime.toISOString()),
+						where("status", "==", "BLOCKED")
+					);
+					
+					const querySnapshot = await getDocs(q);
+					if (!querySnapshot.empty) {
+						const blockedRef = doc(db, "appointments", querySnapshot.docs[0].id);
+						transaction.update(blockedRef, { status: "CANCELED" });
+					}
+				}
+			}
+			
+			return {
+				...mainSlot,
+				id: appointmentId,
+				status: "CANCELED",
+				cancelReason: reason
+			} as Appointment;
+		});
+	}
+
+	async cancelAppointmentByPatient(appointmentId: string): Promise<Appointment> {
+		return await runTransaction(db, async (transaction) => {
+			const ref = doc(db, "appointments", appointmentId);
+			const snapshot = await transaction.get(ref);
+			
+			if (!snapshot.exists()) {
+				throw new Error("Appointment not found");
+			}
+			
+			const mainSlot = snapshot.data() as Appointment;
+			
+			if (mainSlot.status !== "BOOKED") {
+				throw new Error("Only booked appointments can be canceled");
+			}
+			
+			const duration = mainSlot.duration;
+			
+			// Zwolnij główny slot
+			transaction.update(ref, {
+				status: "AVAILABLE",
+				patientData: null,
+				type: null,
+				duration: 1
+			});
+			
+			// Znajdź i zwolnij zablokowane sloty
+			if (duration > 1) {
+				for (let i = 1; i < duration; i++) {
+					const nextTime = new Date(new Date(mainSlot.date).getTime() + i * 30 * 60000);
+					
+					const q = query(
+						collection(db, "appointments"),
+						where("doctorId", "==", mainSlot.doctorId),
+						where("date", "==", nextTime.toISOString()),
+						where("status", "==", "BLOCKED")
+					);
+					
+					const querySnapshot = await getDocs(q);
+					if (!querySnapshot.empty) {
+						const blockedRef = doc(db, "appointments", querySnapshot.docs[0].id);
+						transaction.update(blockedRef, { status: "AVAILABLE" });
+					}
+				}
+			}
+			
+			return {
+				...mainSlot,
+				id: appointmentId,
+				status: "AVAILABLE",
+				patientData: undefined,
+				type: undefined,
+				duration: 1
+			} as Appointment;
+		});
 	}
 
 	async getAbsences(doctorId: string): Promise<Absence[]> {
@@ -151,12 +289,34 @@ export class FirebaseDataProvider implements IDataProvider {
 		return { id: snapshot.id, ...data } as Absence;
 	}
 
-	// // funkcja pomocnicza do sprawdzenia czy nie ma kolizji między terminami
-	// async checkCollision(date: Date, duration: number){
-	// 	const newEnd = this.getEndDate(date, duration);
-	// }
+	async removeAbsence(absenceId: string): Promise<void> {
+		const absenceRef = doc(db, "absences", absenceId);
+		const absenceSnapshot = await getDoc(absenceRef);
+		
+		if (!absenceSnapshot.exists()) {
+			throw new Error("Absence not found");
+		}
+		
+		const absence = absenceSnapshot.data() as Absence;
+		
+		const q = query(
+			collection(db, "appointments"),
+			where("doctorId", "==", absence.doctorId),
+			where("date", ">=", absence.startDate),
+			where("date", "<=", absence.endDate)
+		);
+		
+		const appointmentsSnapshot = await getDocs(q);
+		
+		const batch = writeBatch(db);
+		appointmentsSnapshot.docs.forEach(doc => {
+			batch.delete(doc.ref);
+		});
+		
 
-	// getEndDate(date: Date, duration: number){
-	// 	return new Date(date.getTime() + duration * 30 * 60000);
-	// }
+		batch.delete(absenceRef);
+		
+		await batch.commit();
+	}
+
 }

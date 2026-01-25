@@ -19,6 +19,7 @@ export interface IAppointment extends Document{
 	type?: 'FIRST_VISIT' | 'FOLLOW_UP' | 'CONSULTATION' | 'PRESCRIPTION' | 'TELEVISIT' | 'CHRONIC_CARE' | 'DIAGNOSTIC';
 
 	patientData?: IPatientData;
+	cancelReason?: string;
 }
 
 const AppointmentSchema: Schema = new Schema({
@@ -43,7 +44,8 @@ const AppointmentSchema: Schema = new Schema({
 		age: {type: Number},
 		gender: {type: String, enum: ['male', 'female']},
 		notes: {type: String, required: false}
-	}
+	},
+	cancelReason: { type: String, required: false}
 }, {
 	timestamps: true
 });
