@@ -5,6 +5,7 @@ import { connectToDatabase } from './utils/config';
 import DoctorRouter from './routes/doctorRoutes';
 import AppointmentRouter from './routes/appointmentRoutes';
 import AbsenceRouter from './routes/absenceRoutes';
+import AuthRouter from './routes/authRoutes';
 
 export const app = express();
 app.use(cors({
@@ -23,5 +24,6 @@ app.use(express.json());
 app.use('/api/doctors', DoctorRouter);
 app.use('/api/appointments', AppointmentRouter);
 app.use('/api/absences', AbsenceRouter);
+app.use('/api/auth', AuthRouter)
 
 startServer();

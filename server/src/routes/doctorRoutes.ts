@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { getDoctorById, getDoctors } from "../controllers/doctorController";
 
-
 const DoctorRouter = Router();
 
 DoctorRouter.get('/', getDoctors);
