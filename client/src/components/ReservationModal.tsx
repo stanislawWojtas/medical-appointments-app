@@ -2,6 +2,7 @@ import { Button, DialogBackdrop, DialogBody, DialogCloseTrigger, DialogContent, 
 import { useState } from "react";
 import { reserveAppointment } from "../services/consultationService";
 import type { Appointment, AppointmentType } from "../models/Appointment";
+import { useAuth } from "../context/AuthContext";
 
 
 type ReservationModalProps = {
@@ -15,6 +16,7 @@ type ReservationModalProps = {
 // kroki w rezerwacji
 type ModalStep = 'FORM' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS';
 const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 150}: ReservationModalProps) => {
+	const { user } = useAuth();
     const [visitType, setVisitType] = useState<AppointmentType | undefined>(undefined);
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');
@@ -87,7 +89,7 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
                     firstName, 
                     lastName, 
                     gender!, 
-                    ageNum, 
+                    ageNum,
                     slots, 
                     note
                 );

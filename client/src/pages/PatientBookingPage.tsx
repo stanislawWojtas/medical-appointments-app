@@ -1,8 +1,7 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useParams } from "react-router";
 import DoctorCalendar from "../components/DoctorCalendar";
 import type { Doctor } from "../models/Doctor";
-import PatientSideBar from "../components/PatientSideBar";
 import { useEffect, useState } from "react";
 import { getAbsences, getDoctorById } from "../services/consultationService";
 import type { Absence } from "../models/Absence";
@@ -41,15 +40,10 @@ const PatientBookingPage = () => {
 
 	return(
 		<>
-			<Flex h={"calc(100% - 72px)"}>
-				<Box flex={1}>
-					<PatientSideBar />
-				</Box>
-				<Box flex={5} bg={'gray.200'}>
-					<Text p={0} fontWeight={'bold'} fontSize={'x-large'} letterSpacing={3} padding={3}>Dr. {doctor?.firstName} {doctor?.lastName} - {doctor?.specialization.toLowerCase()}</Text>
-					<DoctorCalendar isDoctor={false} doctorId={doctorId} absences={absences}/>
-				</Box>
-			</Flex>
+			<Box h={"100%"}>
+				<Text p={0} fontWeight={'bold'} fontSize={'x-large'} letterSpacing={3} padding={3}>Dr. {doctor?.firstName} {doctor?.lastName} - {doctor?.specialization.toLowerCase()}</Text>
+				<DoctorCalendar isDoctor={false} doctorId={doctorId} absences={absences}/>
+			</Box>
 		</>
 	)
 }

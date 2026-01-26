@@ -1,8 +1,9 @@
 // Klasa adaptera dzięki której będziemy mogli przełączać się pomiędzy backendami (Firebase, Serwer Node js i ewentualnie json-server)
 
 import type { Absence } from "../models/Absence";
-import type { Appointment, AppointmentType } from "../models/Appointment";
+import type { Appointment, AppointmentType, PatientData } from "../models/Appointment";
 import type { Doctor } from "../models/Doctor";
+import type { Review, ReviewStats, CreateReviewDto } from "../models/Review";
 
 export interface IDataProvider {
 	getDoctors() : Promise<Doctor[]>;
@@ -13,14 +14,15 @@ export interface IDataProvider {
 	cancelAppointmentByPatient(appointmentId: string): Promise<Appointment>;
 	addAvailability(newSlots: Appointment[]): Promise<Appointment[]>;
 	removeAppointment(appointmentId: string): Promise<void>;
-	// TODO: wytwórz interfejs patientData i zmien formularz żeby przesyłał ten interfejs a nie wszystko osobno
-	bookAppointment(appointmentId: string, patientData: any, visitType: AppointmentType, duration: number): Promise<Appointment>;
+	bookAppointment(appointmentId: string, patientData: PatientData, visitType: AppointmentType, duration: number): Promise<Appointment>;
 
 	getAbsences(doctorId: string): Promise<Absence[]>
-	// TODO: zmień dane absence na jakiś jeden interfejs
 	addAbsence(doctorId: string, startDate: Date, endDate: Date, reason?: string): Promise<Absence>;
 	removeAbsence(absenceId: string): Promise<void>;
 
-	
+	// Reviews
+	createReview(reviewData: CreateReviewDto): Promise<Review>;
+	getReviewsByDoctor(doctorId: string): Promise<Review[]>;
+	getReviewStats(doctorId: string): Promise<ReviewStats>;
 
 }

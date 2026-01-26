@@ -76,7 +76,7 @@ export const login = async (request: Request, response: Response) => {
 			return response.status(400).json({message: "Email and password are required"});
 		}
 
-		const user = await User.findOne({email});
+		const user = await User.findOne({email}).populate('doctorId', 'firstName lastName');
 		if(!user){
 			return response.status(400).json({message: "Invalid credentials"});
 		}
@@ -94,10 +94,13 @@ export const login = async (request: Request, response: Response) => {
 		const token = jwt.sign({
 			id: user._id,
 			role: user.role,
-			doctorId: user.doctorId,
+			doctorId: user.doctorId?._id || user.doctorId,
 		},
 		process.env.JWT_SECRET,
 		{expiresIn: '1h'}); //Token ważny przez godzinę
+
+		// Type assertion dla populated doctorId
+		const doctorData = user.doctorId as any;
 
 		return response.json({
 			token,
@@ -105,7 +108,9 @@ export const login = async (request: Request, response: Response) => {
 				id: user._id,
 				email: user.email,
 				role: user.role,
-				doctorId: user.doctorId
+				doctorId: doctorData?._id || user.doctorId,
+				firstName: doctorData?.firstName,
+				lastName: doctorData?.lastName
 			}
 		});
 	}catch(error){

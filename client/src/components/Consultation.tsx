@@ -2,6 +2,7 @@ import { Button, Flex, IconButton, Text, Tooltip } from "@chakra-ui/react";
 import type { Appointment, AppointmentStatus, AppointmentType } from "../models/Appointment";
 import { FiTrash2 } from "react-icons/fi";
 import { FiX } from "react-icons/fi"; // ikona do anulowania
+import { useAuth } from "../context/AuthContext";
 
 const statusColor: Record<AppointmentStatus, string> = {
 	BOOKED: 'red.300',
@@ -23,8 +24,12 @@ const typeDoctorColor: Record<AppointmentType, string> = {
 const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability, onCancelByDoctor, onCancelByPatient}:
      {a: Appointment, isDoctor:boolean, handlePatientClick: () => void, handleRemoveAvailability: (id: string) => void, onCancelByDoctor?: (appointmentId: string, patientName: string) => void, onCancelByPatient?: (appointmentId: string) => void}) => {
 
+    const { user } = useAuth();
     const isPast:boolean = new Date(a.date) < new Date();
     const height = `calc(${a.duration * 100}% - 8px)`; // 4px dla padding/margines
+    
+    // Sprawdź czy wizyta należy do zalogowanego pacjenta
+    const isMyAppointment = !isDoctor && a.patientId === user?.id;
 
     const getTypeColor = (type?: AppointmentType) => {
         if (!type) return 'green.500';
@@ -69,7 +74,7 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                                         variant="ghost"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onCancelByDoctor?.(a.id, `${a.patientData?.firstName} ${a.patientData?.lastName}`);
+                                            onCancelByDoctor?.(a.id, `${a.patientData?.firstName || ''} ${a.patientData?.lastName || ''}`);
                                         }}
                                     >
                                         <FiX />
@@ -127,15 +132,14 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
                         p={0}
                         justify="center"
                         align="center"
-                        onClick={() => {if(!isPast) handlePatientClick()}}
+                        onClick={() => {if(!isPast && a.status === 'AVAILABLE') handlePatientClick()}}
                     >
-                        {/* FIXME: Pacjent nie powinien widzieć swoje rezerwacje jako BOOKED */}
                         {a.status === "CANCELED" ? (
                             <Text fontWeight="bold">Canceled</Text>
                         ) : a.status !== "AVAILABLE" ? (
                             <Flex direction="column" align="center" gap={1}>
-                                <Text fontWeight="bold">Booked</Text>
-                                {!isPast && a.status === "BOOKED" && (
+                                <Text fontWeight="bold">{isMyAppointment ? 'My Appointment' : 'Booked'}</Text>
+                                {!isPast && a.status === "BOOKED" && isMyAppointment && (
                                     <Button
                                         size="xs"
                                         colorPalette="red"

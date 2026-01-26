@@ -28,7 +28,11 @@ export const addAbsence = async (request: Request, response: Response) => {
 		if(!doctorId || !startDate || !endDate) {
 			return response.status(400).json({message: "Doctor ID, startDate, endDate are required"});
 		}
-
+		// Weryfikacja: czy lekarz może dodać nieobecność tylko dla siebie
+		const userDoctorId = request.user?.doctorId;
+		if (!userDoctorId || doctorId.toString() !== userDoctorId.toString()) {
+			return response.status(403).json({message: "You can only add absences for your own schedule"});
+		}
 		const start = new Date(startDate);
 		const end = new Date(endDate);
 		
@@ -76,6 +80,12 @@ export const removeAbsence = async (request: Request, response: Response) => {
 		const absence = await Absence.findById(id);
 		if (!absence) {
 			return response.status(404).json({ message: "Absence not found" });
+		}
+
+		// Weryfikacja: czy nieobecność należy do zalogowanego lekarza
+		const userDoctorId = request.user?.doctorId;
+		if (!userDoctorId || absence.doctorId?.toString() !== userDoctorId.toString()) {
+			return response.status(403).json({message: "You can only remove your own absences"});
 		}
 
 

@@ -52,6 +52,13 @@ export const ENDPOINTS = {
 	},
 	APPOINTMENTS: {
 		LIST: '/api/appointments',
-		BASE: '/api/appointments'
+		BASE: '/api/appointments',
+		MY_APPOINTMENTS: '/api/appointments/my-appointments',
+		CANCEL_BY_PATIENT: (id: string) => `/api/appointments/${id}/cancel-by-patient`
+	},
+	REVIEWS: {
+		CREATE: '/api/reviews',
+		BY_DOCTOR: (doctorId: string) => `/api/reviews/doctor/${doctorId}`,
+		STATS: (doctorId: string) => `/api/reviews/doctor/${doctorId}/stats`
 	}
 }

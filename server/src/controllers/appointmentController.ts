@@ -26,6 +26,19 @@ export const addAvaibility = async (request: Request, response: Response) => {
         if (!Array.isArray(newSlots) || newSlots.length === 0){
             return response.status(400).json({message: "Invalid input: expected non-empty array of appointments"});
         }
+
+        // Weryfikacja: czy wszystkie sloty należą do zalogowanego lekarza
+        const userDoctorId = request.user?.doctorId;
+        if (!userDoctorId) {
+            return response.status(403).json({message: "Doctor ID not found in user profile"});
+        }
+
+        for (const slot of newSlots) {
+            if (slot.doctorId?.toString() !== userDoctorId.toString()) {
+                return response.status(403).json({message: "You can only add availability for your own schedule"});
+            }
+        }
+
         const appointments = await Appointment.insertMany(newSlots);
 
         response.status(201).json(appointments);
@@ -43,6 +56,17 @@ export const removeAppointment = async (request: Request, response: Response) =>
         if(!id){
             return response.status(400).json({message: "Appointment ID is required"})
         };
+
+        // Weryfikacja: czy wizyta należy do zalogowanego lekarza
+        const appointment = await Appointment.findById(id);
+        if (!appointment) {
+            return response.status(404).json({message: "Appointment not found"});
+        }
+
+        const userDoctorId = request.user?.doctorId;
+        if (!userDoctorId || appointment.doctorId?.toString() !== userDoctorId.toString()) {
+            return response.status(403).json({message: "You can only remove your own appointments"});
+        }
 
         const result = await Appointment.deleteOne({_id: id});
         if(result.deletedCount === 0){
@@ -70,6 +94,14 @@ export const cancelAppointmentByDoctor = async(request: Request, response: Respo
             await session.abortTransaction();
             return response.status(404).json({message: "Appointment not found"});
         }
+
+        // Weryfikacja: czy wizyta należy do zalogowanego lekarza
+        const userDoctorId = request.user?.doctorId;
+        if (!userDoctorId || mainSlot.doctorId?.toString() !== userDoctorId.toString()) {
+            await session.abortTransaction();
+            return response.status(403).json({message: "You can only cancel your own appointments"});
+        }
+
         if(mainSlot.status !== 'BOOKED'){
             await session.abortTransaction();
             return response.status(400).json({message: "Only booked appointments can be canceled"});
@@ -212,6 +244,7 @@ export const bookAppointment = async (request: Request, response: Response) => {
         }
         
         mainSlot.status = 'BOOKED';
+        mainSlot.patientId = new mongoose.Types.ObjectId(request.user?.id);
         mainSlot.patientData = patientData;
         mainSlot.type = visitType;
         mainSlot.duration = duration;
@@ -231,5 +264,42 @@ export const bookAppointment = async (request: Request, response: Response) => {
         return;
     } finally{
         session.endSession();
+    }
+}
+
+export const getMyAppointments = async (request: Request, response: Response) => {
+    try {
+        const userId = request.user?.id;
+        
+        if (!userId) {
+            return response.status(401).json({ message: "User not authenticated" });
+        }
+
+        // wszystkie wizyty pacjenta (BOOKED, COMPLETED, CANCELLED) posortowane od najnowszych
+        const appointments = await Appointment.find({
+            patientId: userId,
+            status: { $in: ['BOOKED', 'COMPLETED', 'CANCELED'] }
+        })
+        .populate('doctorId', 'firstName lastName specialization')
+        .sort({ date: 1 }); 
+
+   
+        const formattedAppointments = appointments.map(apt => ({
+            _id: apt._id,
+            date: apt.date,
+            status: apt.status,
+            duration: apt.duration,
+            type: apt.type,
+            notes: apt.patientData?.notes,
+            patientFirstName: apt.patientData?.firstName,
+            patientLastName: apt.patientData?.lastName,
+            doctor: apt.doctorId
+        }));
+
+        response.json(formattedAppointments);
+        return;
+    } catch (error) {
+        response.status(500).json({ message: "Error fetching appointments", error });
+        return;
     }
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addAvaibility, bookAppointment, getAppointments, removeAppointment } from "../controllers/appointmentController";
+import { addAvaibility, bookAppointment, getAppointments, removeAppointment, getMyAppointments } from "../controllers/appointmentController";
 import { cancelAppointmentByDoctor, cancelAppointmentByPatient } from "../controllers/appointmentController";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware";
 
@@ -7,6 +7,9 @@ const AppointmentRouter = Router();
 
 // Wszyscy zalogowani mogą przeglądać terminy
 AppointmentRouter.get('/', verifyToken, getAppointments);
+
+// Pacjent pobiera swoje wizyty
+AppointmentRouter.get('/my-appointments', verifyToken, authorizeRoles('PATIENT'), getMyAppointments);
 
 // Tylko lekarze mogą dodawać dostępność
 AppointmentRouter.post('/availability', verifyToken, authorizeRoles('DOCTOR'), addAvaibility);

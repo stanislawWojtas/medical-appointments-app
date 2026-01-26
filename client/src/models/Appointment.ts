@@ -3,6 +3,14 @@ export type AppointmentType = 'FIRST_VISIT' | 'FOLLOW_UP' | 'CONSULTATION' | 'PR
 // status wizyty
 export type AppointmentStatus = 'AVAILABLE' | 'BOOKED' | 'CANCELED' | 'COMPLETED' | 'BLOCKED';
 
+export interface PatientData {
+	firstName: string;
+	lastName: string;
+	age: number;
+	gender: 'male' | 'female';
+	notes?: string;
+}
+
 export interface Appointment {
 	id: string;
 	doctorId: string;
@@ -15,5 +23,12 @@ export interface Appointment {
 	type?: AppointmentType;
 
 	// dane pacjenta
-	patientData?: IpatientData;
+	patientData?: PatientData;
+	
+	// informacje o lekarzu (populated)
+	doctor?: {
+		firstName: string;
+		lastName: string;
+		specialization: string;
+	};
 }

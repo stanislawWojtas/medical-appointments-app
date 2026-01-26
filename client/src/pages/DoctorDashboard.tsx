@@ -1,5 +1,4 @@
 import { Box, Button, Flex, Text, useDisclosure } from "@chakra-ui/react";
-import DoctorSidebar from "../components/DoctorSidebar";
 import DoctorCalendar from "../components/DoctorCalendar";
 import AbsenceModal from "../components/AbsenceModal";
 import AvailabilityModal from "../components/AvailabilityModal";
@@ -7,11 +6,12 @@ import type { Appointment } from "../models/Appointment";
 import { addAbsence, getAbsences } from "../services/consultationService";
 import { useEffect, useState } from "react";
 import type { Absence } from "../models/Absence";
+import { useAuth } from "../context/AuthContext";
 
 const DoctorDashboard = () => {
 
-	// TODO: Wyrzucić to potem
-	const doctorId = '695e390555f7f9c4ae10d500';
+	const { user } = useAuth();
+	const doctorId = user?.doctorId || '';
 	// modale: osobne sterowanie dla nieobecności i dostępności
 	const { open: isAbsenceOpen, onOpen: onAbsenceOpen, onClose: onAbsenceClose } = useDisclosure();
 	const { open: isAvailabilityOpen, setOpen: setAvailabilityOpen, onOpen: onAvailabilityOpen } = useDisclosure();
@@ -51,22 +51,17 @@ const DoctorDashboard = () => {
 
 	return(
 		<>
-			<Flex h={"calc(100% - 72px)"}>
-				<Box flex={1}>
-					<DoctorSidebar />
-				</Box>
-				<Box flex={5} bg={'gray.200'}>
-					<Flex justifyContent={"space-between"} alignItems={'center'} p={3}>
-						<Text p={0} fontWeight={'bold'} fontSize={'x-large'} letterSpacing={3}>Doctor Panel - Availability Management</Text>
-						<Flex alignItems={"center"} gap={5}>
-							<Button colorPalette={'blue'} onClick={onAvailabilityOpen}>Add appointments</Button>
-							<Button colorPalette={'red'} onClick={onAbsenceOpen}>Add absence</Button>
-						</Flex>
+			<Box h={"100%"}>
+				<Flex justifyContent={"space-between"} alignItems={'center'} p={3}>
+					<Text p={0} fontWeight={'bold'} fontSize={'x-large'} letterSpacing={3}>Doctor Panel - Availability Management</Text>
+					<Flex alignItems={"center"} gap={5}>
+						<Button colorPalette={'blue'} onClick={onAvailabilityOpen}>Add appointments</Button>
+						<Button colorPalette={'red'} onClick={onAbsenceOpen}>Add absence</Button>
 					</Flex>
-					{/* TODO: zmień hard codowane 1 */}
-					<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences} onAbsenceRemoved={handleAbsenceRemoved}/>
-				</Box>
-			</Flex>
+				</Flex>
+				{/* TODO: zmień hard codowane 1 */}
+				<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences} onAbsenceRemoved={handleAbsenceRemoved}/>
+			</Box>
 			{/* modals */}
 			<AbsenceModal isOpen={isAbsenceOpen} onClose={onAbsenceClose} onSuccess={handleNewAbsence}/>
 			<AvailabilityModal

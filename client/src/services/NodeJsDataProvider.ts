@@ -2,6 +2,7 @@ import type { Doctor } from "../models/Doctor";
 import type { IDataProvider } from "./IDataProvider";
 import type { Appointment, AppointmentType } from "../models/Appointment";
 import type { Absence } from "../models/Absence";
+import type { Review, ReviewStats, CreateReviewDto } from "../models/Review";
 import { api } from "../api/axiosInstance";
 
 
@@ -80,5 +81,20 @@ export class NodeDataProvider implements IDataProvider {
 
 	async removeAbsence(absenceId: string): Promise<void> {
 		await this.api.delete(`/api/absences/${absenceId}`);
+	}
+
+	async createReview(reviewData: CreateReviewDto): Promise<Review> {
+		const response = await this.api.post('/api/reviews', reviewData);
+		return response.data;
+	}
+
+	async getReviewsByDoctor(doctorId: string): Promise<Review[]> {
+		const response = await this.api.get(`/api/reviews/doctor/${doctorId}`);
+		return response.data;
+	}
+
+	async getReviewStats(doctorId: string): Promise<ReviewStats> {
+		const response = await this.api.get(`/api/reviews/doctor/${doctorId}/stats`);
+		return response.data;
 	}
 }

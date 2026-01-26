@@ -3,6 +3,7 @@ import type { Doctor } from "../models/Doctor";
 import type { IDataProvider } from "./IDataProvider";
 import { db } from "../firebaseConfig";
 import type { Appointment, AppointmentType } from "../models/Appointment";
+import type { Review, ReviewStats, CreateReviewDto } from "../models/Review";
 import { deleteDoc, writeBatch } from "firebase/firestore";
 import type { Absence } from "../models/Absence";
 
@@ -317,6 +318,18 @@ export class FirebaseDataProvider implements IDataProvider {
 		batch.delete(absenceRef);
 		
 		await batch.commit();
+	}
+
+	async createReview(reviewData: CreateReviewDto): Promise<Review> {
+		throw new Error("Reviews not implemented for Firebase");
+	}
+
+	async getReviewsByDoctor(doctorId: string): Promise<Review[]> {
+		throw new Error("Reviews not implemented for Firebase");
+	}
+
+	async getReviewStats(doctorId: string): Promise<ReviewStats> {
+		throw new Error("Reviews not implemented for Firebase");
 	}
 
 }

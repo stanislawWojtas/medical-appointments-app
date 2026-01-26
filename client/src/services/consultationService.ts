@@ -1,6 +1,7 @@
 import { endOfDay, startOfDay } from "date-fns";
 import type { Appointment, AppointmentType } from "../models/Appointment";
 import type { IDataProvider } from "./IDataProvider";
+import type { CreateReviewDto } from "../models/Review";
 import { FirebaseDataProvider } from "./FirebaseDataProvider";
 import { NodeDataProvider } from "./NodeJsDataProvider";
 
@@ -66,7 +67,16 @@ export const getDoctorById = async (id: string) => {
 
 
 
-export const reserveAppointment = async(id: string, visitType: AppointmentType, firstName: string, lastName:string, gender:'male'|'female', age: number, slotsNum: number,  note:string) => {
+export const reserveAppointment = async(
+	id: string, 
+	visitType: AppointmentType, 
+	firstName: string, 
+	lastName: string, 
+	gender: 'male' | 'female', 
+	age: number,
+	slotsNum: number,  
+	note: string
+) => {
 	const patientData = {
 		firstName: firstName,
 		lastName: lastName,
@@ -75,4 +85,21 @@ export const reserveAppointment = async(id: string, visitType: AppointmentType, 
 		notes: note
 	};
 	return await dataProvider.bookAppointment(id, patientData, visitType, slotsNum);
+}
+
+export const createReview = async (appointmentId: string, rating: number, comment: string) => {
+	const reviewData: CreateReviewDto = {
+		appointmentId,
+		rating,
+		comment
+	};
+	return await dataProvider.createReview(reviewData);
+}
+
+export const getReviewsByDoctor = async (doctorId: string) => {
+	return await dataProvider.getReviewsByDoctor(doctorId);
+}
+
+export const getReviewStats = async (doctorId: string) => {
+	return await dataProvider.getReviewStats(doctorId);
 }

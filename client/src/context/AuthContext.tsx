@@ -5,6 +5,8 @@ export interface User {
 	email: string;
 	role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
 	doctorId?: string; // Jeśli jest lekarzem
+	firstName?: string; // Imię lekarza
+	lastName?: string; // Nazwisko lekarza
 }
 
 interface AuthContextType {
@@ -13,6 +15,7 @@ interface AuthContextType {
 	login: (token: string, userData: User) => void;
 	logout: () => void;
 	isAuthenticated: boolean;
+	isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,9 +23,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [token, setToken] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-
 		const storedToken = localStorage.getItem('token');
 		const storedUser = localStorage.getItem('user');
 
@@ -30,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			setToken(storedToken);
 			setUser(JSON.parse(storedUser));
 		}
+		setIsLoading(false);
 	}, []);
 
 	const login = (newToken: string, userData: User) => {
@@ -48,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	};
 
 	return (
-		<AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user }}>
+		<AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user, isLoading }}>
 			{children}
 		</AuthContext.Provider>
 	);
