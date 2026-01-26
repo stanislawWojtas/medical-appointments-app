@@ -84,6 +84,26 @@ const Navbar = () => {
 						</Box>
 					)}
 
+					{/* Admin Dashboard - tylko dla adminów */}
+					{isAuthenticated && user?.role === 'ADMIN' && (
+						<Box
+							h="full"
+							display="flex"
+							alignItems="center"
+							justifyContent="center"
+							textAlign="center"
+							p={3}
+							color="white"
+							fontSize="lg"
+							fontWeight="bold"
+							_hover={{ bg: "blue.500" }}
+							cursor="pointer"
+							onClick={() => navigate('/admin/register-doctor')}
+						>
+							Admin Panel
+						</Box>
+					)}
+
 					{/* Przyciski autoryzacji */}
 					{isAuthenticated ? (
 						<>

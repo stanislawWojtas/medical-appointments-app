@@ -132,10 +132,7 @@ const ReviewsPage = () => {
 									<Box>
 										<Flex align="center" gap={3}>
 											<Text fontWeight="bold" fontSize="lg">
-												{typeof review.patientId !== 'string' 
-													? `${review.patientId.firstName} ${review.patientId.lastName}`
-													: 'Anonymous Patient'
-												}
+												Anonymous Patient
 											</Text>
 											<Badge colorPalette="blue">
 												{review.rating}/5

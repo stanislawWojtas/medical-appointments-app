@@ -11,6 +11,6 @@ router.post('/', verifyToken, authorizeRoles('PATIENT'), createReview);
 router.get('/doctor/:doctorId', verifyToken, authorizeRoles('DOCTOR'), getReviewsByDoctor);
 
 // statystki też widzi tylko lekarz
-router.get('/doctor/:doctorId/stats', authorizeRoles('DOCTOR'), getReviewStats);
+router.get('/doctor/:doctorId/stats', verifyToken, authorizeRoles('DOCTOR'), getReviewStats);
 
 export default router;

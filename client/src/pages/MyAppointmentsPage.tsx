@@ -1,8 +1,8 @@
 import { Box, Heading, Stack, Text, Button, Flex, Badge, Tabs, DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogCloseTrigger, DialogPositioner } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { api, ENDPOINTS } from "../api/axiosInstance";
 import type { Appointment } from "../models/Appointment";
 import ReviewModal from "../components/ReviewModal";
+import * as consultationService from "../services/consultationService";
 
 const MyAppointmentsPage = () => {
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -18,8 +18,8 @@ const MyAppointmentsPage = () => {
 
 	const fetchAppointments = async () => {
 		try {
-			const response = await api.get(ENDPOINTS.APPOINTMENTS.MY_APPOINTMENTS);
-			setAppointments(response.data);
+			const appointments = await consultationService.getMyAppointments();
+			setAppointments(appointments);
 		} catch (error) {
 			console.error("Error fetching appointments:", error);
 		} finally {
@@ -41,7 +41,7 @@ const MyAppointmentsPage = () => {
 		if (!appointmentToCancel) return;
 
 		try {
-			await api.patch(ENDPOINTS.APPOINTMENTS.CANCEL_BY_PATIENT(appointmentToCancel));
+			await consultationService.cancelAppointmentByPatient(appointmentToCancel);
 			setCancelModalOpen(false);
 			setAppointmentToCancel(null);
 			
@@ -109,9 +109,11 @@ const MyAppointmentsPage = () => {
 					<Text color="gray.600" mb={1}>
 						<strong>Date:</strong> {formatDate(appointment.date)}
 					</Text>
-					<Text color="gray.600" mb={1}>
-						<strong>Patient:</strong> {appointment.patientData?.firstName} {appointment.patientData?.lastName}
-					</Text>
+					{appointment.patientData && (
+						<Text color="gray.600" mb={1}>
+							<strong>Patient:</strong> {appointment.patientData.firstName} {appointment.patientData.lastName}
+						</Text>
+					)}
 					{appointment.patientData?.notes && (
 						<Text color="gray.600" mt={2}>
 							<strong>Notes:</strong> {appointment.patientData.notes}

@@ -17,6 +17,7 @@ const DoctorDashboard = () => {
 	const { open: isAvailabilityOpen, setOpen: setAvailabilityOpen, onOpen: onAvailabilityOpen } = useDisclosure();
 
 	const [absences, setAbsences] = useState<Absence[]>([]);
+	const [refreshKey, setRefreshKey] = useState(0);
 
 	useEffect(() => {
 		const fetchAbsences = async () => {
@@ -30,8 +31,9 @@ const DoctorDashboard = () => {
 		fetchAbsences();
 	}, [])
 
-	const handleNewSlots = (slots: Appointment[]) => {
-		console.table(slots)
+	const handleNewSlots = () => {
+		// Odśwież kalendarz po dodaniu nowych slotów
+		setRefreshKey(prev => prev + 1);
 	}
 	const handleNewAbsence = async (startDate: Date, endDate: Date, reason?: string) => {
 		try{
@@ -59,8 +61,13 @@ const DoctorDashboard = () => {
 						<Button colorPalette={'red'} onClick={onAbsenceOpen}>Add absence</Button>
 					</Flex>
 				</Flex>
-				{/* TODO: zmień hard codowane 1 */}
-				<DoctorCalendar isDoctor={true} doctorId={doctorId} absences={absences} onAbsenceRemoved={handleAbsenceRemoved}/>
+				<DoctorCalendar 
+					key={refreshKey}
+					isDoctor={true} 
+					doctorId={doctorId} 
+					absences={absences} 
+					onAbsenceRemoved={handleAbsenceRemoved}
+				/>
 			</Box>
 			{/* modals */}
 			<AbsenceModal isOpen={isAbsenceOpen} onClose={onAbsenceClose} onSuccess={handleNewAbsence}/>

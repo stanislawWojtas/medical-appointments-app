@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api, ENDPOINTS } from '../api/axiosInstance';
 import { Box, Button, Input, Stack, Heading, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router';
+import * as consultationService from '../services/consultationService';
 
 export const LoginPage = () => {
 	const [email, setEmail] = useState('');
@@ -19,12 +19,7 @@ export const LoginPage = () => {
 		setIsLoading(true);
 
 		try {
-			const response = await api.post(ENDPOINTS.AUTH.LOGIN, {
-				email,
-				password
-			});
-
-			const { token, user } = response.data;
+			const { token, user } = await consultationService.login(email, password);
 			
 			// Zapisujemy token i dane użytkownika
 			login(token, user);
@@ -67,7 +62,7 @@ export const LoginPage = () => {
 					
 					{error && <Text color="red.500">{error}</Text>}
 					
-					<Button type="submit" colorPalette="blue" isLoading={isLoading}>
+					<Button type="submit" colorPalette="blue">
 						Login
 					</Button>
 

@@ -1,7 +1,9 @@
 import { Flex, Box, Image, Text, Button } from "@chakra-ui/react";
+import { useAuth } from "../context/AuthContext";
 
 
 const PatientSideBar = () => {
+	const { user } = useAuth();
 
 	return(
 		<>
@@ -16,13 +18,11 @@ const PatientSideBar = () => {
 						objectFit={"cover"}
 						w={'100%'}
 						h={'100%'}
-						alt="Doctor Image" 
+						alt="Patient Image" 
 						src="https://thumbs.dreamstime.com/b/default-profile-picture-avatar-photo-placeholder-vector-illustration-default-profile-picture-avatar-photo-placeholder-vector-189495158.jpg" />
 				</Box>
-				{/* TODO: zamień potem na prawdziwe dane pacjenta */}
-				<Text fontWeight={"bold"}>Adam Nowak</Text>
-				<Text color={'gray.400'}>Patient</Text>
-				<Button colorPalette={'blue'}>Edit profile</Button>
+				<Text fontWeight={"bold"}>{user?.email || 'User'}</Text>
+				<Text color={'gray.400'}>{user?.role || 'PATIENT'}</Text>
 			</Flex>
 		</>
 	)

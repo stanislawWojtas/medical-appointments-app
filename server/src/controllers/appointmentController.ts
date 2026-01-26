@@ -275,6 +275,19 @@ export const getMyAppointments = async (request: Request, response: Response) =>
             return response.status(401).json({ message: "User not authenticated" });
         }
 
+        // Automatyczna zmiana statusu BOOKED -> COMPLETED dla wizyt które już minęły
+        const now = new Date();
+        await Appointment.updateMany(
+            {
+                patientId: userId,
+                status: 'BOOKED',
+                date: { $lt: now }
+            },
+            {
+                $set: { status: 'COMPLETED' }
+            }
+        );
+
         // wszystkie wizyty pacjenta (BOOKED, COMPLETED, CANCELLED) posortowane od najnowszych
         const appointments = await Appointment.find({
             patientId: userId,
@@ -285,15 +298,26 @@ export const getMyAppointments = async (request: Request, response: Response) =>
 
    
         const formattedAppointments = appointments.map(apt => ({
-            _id: apt._id,
+            id: apt._id.toString(),
+            doctorId: apt.doctorId?._id?.toString() || apt.doctorId,
+            patientId: apt.patientId?.toString(),
             date: apt.date,
-            status: apt.status,
             duration: apt.duration,
+            price: apt.price,
+            status: apt.status,
             type: apt.type,
-            notes: apt.patientData?.notes,
-            patientFirstName: apt.patientData?.firstName,
-            patientLastName: apt.patientData?.lastName,
-            doctor: apt.doctorId
+            patientData: apt.patientData ? {
+                firstName: apt.patientData.firstName,
+                lastName: apt.patientData.lastName,
+                age: apt.patientData.age,
+                gender: apt.patientData.gender,
+                notes: apt.patientData.notes
+            } : undefined,
+            doctor: apt.doctorId && typeof apt.doctorId === 'object' ? {
+                firstName: (apt.doctorId as any).firstName,
+                lastName: (apt.doctorId as any).lastName,
+                specialization: (apt.doctorId as any).specialization
+            } : undefined
         }));
 
         response.json(formattedAppointments);

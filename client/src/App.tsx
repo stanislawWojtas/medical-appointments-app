@@ -5,10 +5,15 @@ import MainLayout from "./pages/MainLayout"
 import PatientBookingPage from "./pages/PatientBookingPage"
 import MyAppointmentsPage from "./pages/MyAppointmentsPage"
 import ReviewsPage from "./pages/ReviewsPage"
+import AdminRegisterDoctor from "./pages/AdminRegisterDoctor"
+import AdminPatients from "./pages/AdminPatients"
+import AdminDoctorsReviews from "./pages/AdminDoctorsReviews"
+import AdminNav from "./components/AdminNav"
 import { LoginPage } from "./pages/LoginPage"
 import { RegisterPage } from "./pages/RegisterPage"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { useAuth } from "./context/AuthContext"
+import { Box } from "@chakra-ui/react"
 
 // Strona główna - przekierowanie w zależności od roli
 const HomeRedirect = () => {
@@ -20,6 +25,8 @@ const HomeRedirect = () => {
   
   if (user?.role === 'DOCTOR') {
     return <Navigate to="/doctor/dashboard" replace />;
+  } else if (user?.role === 'ADMIN') {
+    return <Navigate to="/admin/register-doctor" replace />;
   } else {
     return <Navigate to="/home" replace />;
   }
@@ -44,6 +51,34 @@ function App() {
           <Route path="doctor/reviews" element={
             <ProtectedRoute allowedRoles={['DOCTOR']}>
               <ReviewsPage />
+            </ProtectedRoute>
+          } />
+
+          {/* ADMIN ROUTES */}
+          <Route path="admin/register-doctor" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <Box>
+                <AdminNav />
+                <AdminRegisterDoctor />
+              </Box>
+            </ProtectedRoute>
+          } />
+
+          <Route path="admin/patients" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <Box>
+                <AdminNav />
+                <AdminPatients />
+              </Box>
+            </ProtectedRoute>
+          } />
+
+          <Route path="admin/reviews" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <Box>
+                <AdminNav />
+                <AdminDoctorsReviews />
+              </Box>
             </ProtectedRoute>
           } />
           

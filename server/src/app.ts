@@ -7,6 +7,7 @@ import AppointmentRouter from './routes/appointmentRoutes';
 import AbsenceRouter from './routes/absenceRoutes';
 import AuthRouter from './routes/authRoutes';
 import ReviewRouter from './routes/reviewRoutes';
+import AdminRouter from './routes/adminRoutes';
 
 export const app = express();
 app.use(cors({
@@ -27,5 +28,6 @@ app.use('/api/appointments', AppointmentRouter);
 app.use('/api/absences', AbsenceRouter);
 app.use('/api/auth', AuthRouter);
 app.use('/api/reviews', ReviewRouter);
+app.use('/api/admin', AdminRouter);
 
 startServer();

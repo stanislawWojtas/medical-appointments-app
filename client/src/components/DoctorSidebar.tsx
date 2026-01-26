@@ -58,7 +58,6 @@ const DoctorSidebar = () => {
 				) : (
 					<Text color={'gray.500'}>Loading...</Text>
 				)}
-				<Button colorPalette={'blue'}>Edit profile</Button>
 				
 				<Box w="100%" mt={4} borderTop="1px solid" borderColor="gray.200" pt={4}>
 					<Button

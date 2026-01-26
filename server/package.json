@@ -7,7 +7,8 @@
     "tsc": "tsc",
     "dev": "ts-node-dev src/index.ts",
     "lint": "eslint .",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "create-admin": "ts-node src/createAdmin.ts"
   },
   "keywords": [],
   "author": "",

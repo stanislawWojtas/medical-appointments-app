@@ -1,22 +1,46 @@
 import { endOfDay, startOfDay } from "date-fns";
 import type { Appointment, AppointmentType } from "../models/Appointment";
-import type { IDataProvider } from "./IDataProvider";
+import type { IDataProvider, LoginResponse, RegisterPayload, RegisterDoctorPayload } from "./IDataProvider";
 import type { CreateReviewDto } from "../models/Review";
 import { FirebaseDataProvider } from "./FirebaseDataProvider";
 import { NodeDataProvider } from "./NodeJsDataProvider";
 
-const USE_FIREBASE = false; // TODO: Na razie jest true/false ale domyślnie będzie firebase/node/json-server
+// ====================================================================
+// ZMIEŃ TUTAJ BACKEND: false = Node.js, true = Firebase
+// ====================================================================
+const USE_FIREBASE = true;
+// ====================================================================
 
-const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider(); // TODO: dodać inne implementacje IDataProvider (json-server)
+const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider();
 
+// Authentication
+export const login = async (email: string, password: string): Promise<LoginResponse> => {
+	return await dataProvider.login(email, password);
+}
 
+export const register = async (payload: RegisterPayload): Promise<void> => {
+	return await dataProvider.register(payload);
+}
+
+// Doctors
+export const getDoctors = async () => {
+	return await dataProvider.getDoctors();
+}
+
+export const getDoctorById = async (id: string) => {
+	return await dataProvider.getDoctorById(id);
+}
+
+// Appointments
 export const getAppointmentsByDates = async (startDate: Date, endDate: Date, doctorId: string) => {
 	return await dataProvider.getAppointments(doctorId, startOfDay(startDate), endOfDay(endDate));
 }
 
+export const getMyAppointments = async () => {
+	return await dataProvider.getMyAppointments();
+}
 
 export const createAvailability = async (doctorId: string, date: Date) => {
-
 	const newSlot: Partial<Appointment> = {
 		doctorId: doctorId,
 		date: date.toISOString(),
@@ -28,7 +52,6 @@ export const createAvailability = async (doctorId: string, date: Date) => {
 	const createdAppointments = await dataProvider.addAvailability([newSlot] as Appointment[]);
 
 	return createdAppointments[0]; // zwracamy pierwsze (i jedyne) utworzone appointment z prawdziwym ID
-
 }
 
 export const removeAppointment = async (id: string) => {
@@ -60,12 +83,6 @@ export const removeAbsence = async (absenceId: string) => {
 	await dataProvider.removeAbsence(absenceId);
 	return { id: absenceId };
 }
-
-export const getDoctorById = async (id: string) => {
-	return await dataProvider.getDoctorById(id);
-}
-
-
 
 export const reserveAppointment = async(
 	id: string, 
@@ -99,7 +116,29 @@ export const createReview = async (appointmentId: string, rating: number, commen
 export const getReviewsByDoctor = async (doctorId: string) => {
 	return await dataProvider.getReviewsByDoctor(doctorId);
 }
+// Admin operations
+export const registerDoctor = async (payload: RegisterDoctorPayload) => {
+	return await dataProvider.registerDoctor(payload);
+}
 
+export const getAllPatients = async () => {
+	return await dataProvider.getAllPatients();
+}
+
+export const blockUser = async (userId: string) => {
+	return await dataProvider.blockUser(userId);
+}
+
+export const unblockUser = async (userId: string) => {
+	return await dataProvider.unblockUser(userId);
+}
+
+export const getAllDoctorsWithReviews = async () => {
+	return await dataProvider.getAllDoctorsWithReviews();
+}
 export const getReviewStats = async (doctorId: string) => {
 	return await dataProvider.getReviewStats(doctorId);
+}
+export const deleteReview = async (reviewId: string) => {
+	return await dataProvider.deleteReview(reviewId);
 }

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { NextFunction, Request, Response } from "express";
 
-// Rozszerzenie typu Request o pole user i patient id
+// Rozszerzenie typu Request o pole user
 declare module 'express-serve-static-core' {
 	interface Request {
 		user?: {

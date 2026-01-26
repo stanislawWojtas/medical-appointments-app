@@ -4,6 +4,7 @@ export interface IUser extends Document{
 	email:string;
 	password:string;
 	role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
+	isBlocked: boolean;
 
 	//powiązanie z lekarzem żeby było szybciej
 	doctorId?: mongoose.Types.ObjectId;
@@ -25,6 +26,10 @@ const UserSchema: Schema = new Schema({
 		type: String,
 		enum: ['DOCTOR', 'PATIENT', 'ADMIN'],
 		default: 'PATIENT',
+	},
+	isBlocked: {
+		type: Boolean,
+		default: false
 	},
 	doctorId:{
 		type: mongoose.Schema.Types.ObjectId,

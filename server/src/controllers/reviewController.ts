@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import Review from '../models/Review';
 import Appointment from '../models/Appointment';
+import User from '../models/User';
 import mongoose from "mongoose";
+import '../middleware/authMiddleware'; // Import aby załadować rozszerzenie typu Request
 
 export const createReview = async (request: Request, response: Response) => {
 	try {
@@ -10,6 +12,16 @@ export const createReview = async (request: Request, response: Response) => {
 
 		if (!patientId) {
 			return response.status(401).json({ message: "Unauthorized" });
+		}
+
+		// Sprawdzenie czy użytkownik jest zablokowany
+		const user = await User.findById(patientId);
+		if (!user) {
+			return response.status(404).json({ message: "User not found" });
+		}
+
+		if (user.isBlocked) {
+			return response.status(403).json({ message: "You are blocked and cannot create reviews" });
 		}
 
 		// sprawdzenie czy wizyta istnieje i należy do tego pacjenta
@@ -65,8 +77,8 @@ export const getReviewsByDoctor = async (request: Request, response: Response) =
 			return response.status(400).json({ message: "Invalid doctor ID" });
 		}
 
+		// Nie populate patientId - lekarz nie widzi kto wystawił opinię (anonimowe recenzje)
 		const reviews = await Review.find({ doctorId: doctorId })
-			.populate('patientId', 'firstName lastName')
 			.sort({ createdAt: -1 });
 
 		response.json(reviews);
@@ -125,3 +137,30 @@ export const getReviewStats = async (request: Request, response: Response) => {
 		return;
 	}
 };
+
+// Usuń recenzję (tylko admin)
+export const deleteReview = async (request: Request, response: Response) => {
+	try {
+		const { reviewId } = request.params;
+
+		if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+			return response.status(400).json({ message: "Invalid review ID" });
+		}
+
+		const review = await Review.findById(reviewId);
+		if (!review) {
+			return response.status(404).json({ message: "Review not found" });
+		}
+
+		await Review.findByIdAndDelete(reviewId);
+
+		return response.status(200).json({ 
+			message: "Review deleted successfully",
+			reviewId: reviewId
+		});
+	} catch (error) {
+		console.error("Error deleting review:", error);
+		return response.status(500).json({ message: (error as Error).message });
+	}
+};
+

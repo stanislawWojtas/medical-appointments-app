@@ -21,11 +21,11 @@ const MainLayout = () => {
 				<Navbar />
 				<Flex h={"calc(100% - 72px)"}>
 					{showSidebar && (
-						<Box flex={1}>
+						<Box flex={1} overflowY="auto">
 							{isDoctor ? <DoctorSidebar /> : <PatientSideBar />}
 						</Box>
 					)}
-					<Box flex={showSidebar ? 5 : 1} bg={showSidebar ? 'gray.200' : 'white'}>
+					<Box flex={showSidebar ? 5 : 1} bg={showSidebar ? 'gray.200' : 'white'} overflowY="auto">
 						<Outlet />
 					</Box>
 				</Flex>

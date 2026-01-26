@@ -1,9 +1,9 @@
 import { Box, Heading, Stack, Text, Button, Flex, Input } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { api, ENDPOINTS } from "../api/axiosInstance";
 import type { Doctor } from "../models/Doctor";
 import { useAuth } from "../context/AuthContext";
+import * as consultationService from "../services/consultationService";
 
 const HomePage = () => {
 	const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -17,9 +17,9 @@ const HomePage = () => {
 	useEffect(() => {
 		const fetchDoctors = async () => {
 			try {
-				const response = await api.get(ENDPOINTS.DOCTORS.LIST);
-				setDoctors(response.data);
-				setFilteredDoctors(response.data);
+				const doctors = await consultationService.getDoctors();
+				setDoctors(doctors);
+				setFilteredDoctors(doctors);
 			} catch (error) {
 				console.error("Error fetching doctors:", error);
 			} finally {

@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
-import Doctor from "../models/Doctor";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -10,12 +9,19 @@ export const register = async (request: Request, response: Response) => {
 	session.startTransaction();
 	
 	try{
-		const {email, password, role, firstName, lastName, specialization, pricePerVisit} = request.body;
+		const {email, password} = request.body;
 
 		// Walidacja podstawowych danych
 		if (!email || !password) {
 			await session.abortTransaction();
 			return response.status(400).json({message: "Email and password are required"});
+		}
+
+		// Walidacja formatu email
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			await session.abortTransaction();
+			return response.status(400).json({message: "Invalid email format"});
 		}
 
 		if (password.length < 8) {
@@ -32,28 +38,13 @@ export const register = async (request: Request, response: Response) => {
 		const salt = await bcrypt.genSalt(10);
 		const hashedPass = await bcrypt.hash(password, salt);
 
+		// Publiczny endpoint rejestracji tworzy TYLKO pacjentów
+		// Rejestracja lekarzy jest dostępna tylko przez admin panel
 		const newUser = new User({
 			email,
 			password: hashedPass,
-			role: role || 'PATIENT'
+			role: 'PATIENT'
 		});
-
-		//jeżeli rejestrujemy lekarza to tworzymy mu od razu profil
-		if (role === 'DOCTOR'){
-			console.log(firstName, lastName, specialization)
-			if(!firstName || !lastName || !specialization){
-				await session.abortTransaction();
-				return response.status(400).json({message: "Doctor must provide firstname, lastname and specialization"});
-			}
-			const newDoctor = new Doctor({
-				firstName,
-				lastName, 
-				specialization,
-				pricePerVisit: pricePerVisit || 150 // domyślnie cena to 150
-			});
-			const savedDoctor = await newDoctor.save({session});
-			newUser.doctorId = savedDoctor._id as any;
-		}
 
 		await newUser.save({session});
 		await session.commitTransaction();
