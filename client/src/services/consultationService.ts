@@ -5,10 +5,9 @@ import type { CreateReviewDto } from "../models/Review";
 import { FirebaseDataProvider } from "./FirebaseDataProvider";
 import { NodeDataProvider } from "./NodeJsDataProvider";
 
+// TUTAJ ZMIENIA SIĘ BACKEND NODE JS LUB FIREBASE
 // ====================================================================
-// ZMIEŃ TUTAJ BACKEND: false = Node.js, true = Firebase
-// ====================================================================
-const USE_FIREBASE = true;
+const USE_FIREBASE = false;
 // ====================================================================
 
 const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider();

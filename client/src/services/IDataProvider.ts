@@ -6,11 +6,15 @@ import type { Doctor } from "../models/Doctor";
 import type { Review, ReviewStats, CreateReviewDto } from "../models/Review";
 
 export interface LoginResponse {
-	token: string;
+	accessToken: string;
+	refreshToken: string;
 	user: {
 		id: string;
 		email: string;
 		role: string;
+		doctorId?: string;
+		firstName?: string;
+		lastName?: string;
 	};
 }
 

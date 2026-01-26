@@ -1,16 +1,29 @@
 import { addDoc, collection, doc, getDoc, getDocs, query, runTransaction, where } from "firebase/firestore";
 import type { Doctor } from "../models/Doctor";
 import type { IDataProvider, Patient, DoctorWithReviews, RegisterDoctorPayload, LoginResponse, RegisterPayload } from "./IDataProvider";
-import { db, auth } from "../firebaseConfig";
+import { db, auth, secondaryAuth } from "../firebaseConfig";
 import type { Appointment, AppointmentType, PatientData } from "../models/Appointment";
 import type { Review, ReviewStats, CreateReviewDto } from "../models/Review";
 import { deleteDoc, writeBatch, setDoc, updateDoc, Timestamp, orderBy } from "firebase/firestore";
 import type { Absence } from "../models/Absence";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 
 // TODO: zamplementowac metody firebase
 // klasa adapter do obsługi różnych backendów
 export class FirebaseDataProvider implements IDataProvider {
+
+	private async getCurrentUser() {
+		return new Promise<any>((resolve, reject) => {
+			const unsubscribe = onAuthStateChanged(auth, (user) => {
+				unsubscribe();
+				if (user) {
+					resolve(user);
+				} else {
+					reject(new Error("User not authenticated"));
+				}
+			});
+		});
+	}
 
 	// Auth methods
 	async login(email: string, password: string): Promise<LoginResponse> {
@@ -42,10 +55,10 @@ export class FirebaseDataProvider implements IDataProvider {
 			// Pobierz token
 			const token = await firebaseUser.getIdToken();
 
-			// Jeśli to lekarz, pobierz dane lekarza
+			// Jeśli to lekarz, pobierz dane lekarza (doctorId = userId)
 			let doctorData = null;
-			if (userData.role === 'DOCTOR' && userData.doctorId) {
-				const doctorDocRef = doc(db, "doctors", userData.doctorId);
+			if (userData.role === 'DOCTOR') {
+				const doctorDocRef = doc(db, "doctors", firebaseUser.uid);
 				const doctorDoc = await getDoc(doctorDocRef);
 				if (doctorDoc.exists()) {
 					doctorData = doctorDoc.data();
@@ -58,7 +71,8 @@ export class FirebaseDataProvider implements IDataProvider {
 					id: firebaseUser.uid,
 					email: userData.email,
 					role: userData.role,
-					...(userData.doctorId && { doctorId: userData.doctorId }),
+					// Dla lekarza, doctorId = userId
+					...(userData.role === 'DOCTOR' && { doctorId: firebaseUser.uid }),
 					...(doctorData?.firstName && { firstName: doctorData.firstName }),
 					...(doctorData?.lastName && { lastName: doctorData.lastName })
 				}
@@ -112,11 +126,7 @@ export class FirebaseDataProvider implements IDataProvider {
 
 	async getMyAppointments(): Promise<Appointment[]> {
 		try {
-			const user = auth.currentUser;
-			if (!user) {
-				throw new Error("User not authenticated");
-			}
-
+			const user = await this.getCurrentUser();
 			const userId = user.uid;
 
 			// Automatyczna zmiana statusu BOOKED -> COMPLETED dla wizyt które już minęły
@@ -295,8 +305,12 @@ export class FirebaseDataProvider implements IDataProvider {
 				}
 			}
 
+			// Pobierz ID zalogowanego pacjenta
+			const user = await this.getCurrentUser();
+
 			transaction.update(ref, {
 				status: "BOOKED",
+				patientId: user.uid,
 				patientData: patientData,
 				type: visitType,
 				duration: duration
@@ -312,6 +326,7 @@ export class FirebaseDataProvider implements IDataProvider {
 				...mainSlot,
 				id: appointmentId,
 				status: "BOOKED",
+				patientId: user.uid,
 				patientData: patientData,
 				type: visitType,
 				duration: duration
@@ -500,11 +515,7 @@ export class FirebaseDataProvider implements IDataProvider {
 
 	async createReview(reviewData: CreateReviewDto): Promise<Review> {
 		try {
-			const user = auth.currentUser;
-			if (!user) {
-				throw new Error("Unauthorized");
-			}
-
+			const user = await this.getCurrentUser();
 			const patientId = user.uid;
 
 			// Sprawdzenie czy użytkownik jest zablokowany
@@ -668,26 +679,30 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("Password must be at least 8 characters long");
 			}
 
-			// Utwórz użytkownika w Firebase Auth
-			const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+			// Użyj secondaryAuth żeby nie wylogować admina
+			const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
 			const firebaseUser = userCredential.user;
-
-			// Tworzymy profil lekarza
-			const doctorDocRef = await addDoc(collection(db, "doctors"), {
-				firstName,
-				lastName,
-				specialization,
-				pricePerVisit: pricePerVisit || 150
-			});
 
 			// Tworzymy użytkownika z rolą DOCTOR
 			await setDoc(doc(db, "users", firebaseUser.uid), {
 				email,
 				role: 'DOCTOR',
 				isBlocked: false,
-				doctorId: doctorDocRef.id,
 				createdAt: Timestamp.now()
 			});
+
+			// Tworzymy profil lekarza z tym samym ID co użytkownik
+			await setDoc(doc(db, "doctors", firebaseUser.uid), {
+				firstName: firstName,
+				lastName: lastName,
+				specialization,
+				pricePerVisit: pricePerVisit || 150,
+				averageRating: 0,
+				reviewCount: 0
+			});
+
+			// Wyloguj nowo utworzonego użytkownika z secondaryAuth
+			await signOut(secondaryAuth);
 
 		} catch (error: any) {
 			if (error.code === 'auth/email-already-in-use') {

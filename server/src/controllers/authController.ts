@@ -4,6 +4,19 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+// Funkcje pomocnicze
+const generateAccessToken = (user: any) => {
+	return jwt.sign({
+		id: user._id,
+		role: user.role,
+		doctorId: user.doctorId?._id || user.doctorId,
+	}, process.env.JWT_SECRET!, { expiresIn: '15m' });
+};
+
+const generateRefreshToken = () => {
+	return jwt.sign({}, process.env.JWT_SECRET!, { expiresIn: '7d' });
+};
+
 export const register = async (request: Request, response: Response) => {
 	const session = await mongoose.startSession();
 	session.startTransaction();
@@ -81,20 +94,20 @@ export const login = async (request: Request, response: Response) => {
 			throw new Error("JWT_SECRET is not defined in environment variables");
 		}
 
-		//Wygenerowanie tokena
-		const token = jwt.sign({
-			id: user._id,
-			role: user.role,
-			doctorId: user.doctorId?._id || user.doctorId,
-		},
-		process.env.JWT_SECRET,
-		{expiresIn: '1h'}); //Token ważny przez godzinę
+		//Wygenerowanie tokenów
+		const accessToken = generateAccessToken(user);
+		const refreshToken = generateRefreshToken();
+
+		// Zapisz refreshToken w bazie
+		user.refreshToken = refreshToken;
+		await user.save();
 
 		// Type assertion dla populated doctorId
 		const doctorData = user.doctorId as any;
 
 		return response.json({
-			token,
+			accessToken,
+			refreshToken,
 			user: {
 				id: user._id,
 				email: user.email,
@@ -106,5 +119,54 @@ export const login = async (request: Request, response: Response) => {
 		});
 	}catch(error){
 		return response.status(500).json({message: (error as Error).message})
+	}
+}
+
+export const refreshToken = async (request: Request, response: Response) => {
+	try {
+		const { refreshToken } = request.body;
+		if (!refreshToken) {
+			return response.status(400).json({ message: 'Refresh token is required' });
+		}
+
+		// Weryfikuj refreshToken
+		jwt.verify(refreshToken, process.env.JWT_SECRET!);
+
+		// Znajdź użytkownika z tym tokenem
+		const user = await User.findOne({ refreshToken }).populate('doctorId', 'firstName lastName');
+		if (!user) {
+			return response.status(403).json({ message: 'Invalid refresh token' });
+		}
+
+		// Generuj nowy accessToken
+		const newAccessToken = generateAccessToken(user);
+
+		return response.json({ accessToken: newAccessToken });
+	} catch (error) {
+		return response.status(403).json({ message: 'Invalid refresh token' });
+	}
+}
+
+export const logout = async (request: Request, response: Response) => {
+	try {
+		const { refreshToken } = request.body;
+		if (!refreshToken) {
+			return response.status(400).json({ message: 'Refresh token is required' });
+		}
+
+		// Znajdź użytkownika i usuń refreshToken
+		const user = await User.findOneAndUpdate(
+			{ refreshToken },
+			{ $unset: { refreshToken: 1 } },
+			{ new: true }
+		);
+
+		if (!user) {
+			return response.status(400).json({ message: 'Invalid refresh token' });
+		}
+
+		return response.json({ message: 'Logged out successfully' });
+	} catch (error) {
+		return response.status(500).json({ message: (error as Error).message });
 	}
 }

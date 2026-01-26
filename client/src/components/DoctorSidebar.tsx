@@ -46,7 +46,7 @@ const DoctorSidebar = () => {
 						w={'100%'}
 						h={'100%'}
 						alt="Doctor Image" 
-						src="https://media.istockphoto.com/id/92347250/photo/portrait-of-a-doctor.jpg?s=612x612&w=0&k=20&c=yKBhDy7ch065QV8mE4ocec8n9uec9VmBDmT137ZjHFo=" />
+						src="https://img.icons8.com/color/1200/medical-doctor.jpg" />
 				</Box>
 				{isLoading ? (
 					<Spinner size="sm" />

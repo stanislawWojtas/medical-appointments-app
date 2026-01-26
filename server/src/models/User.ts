@@ -8,6 +8,7 @@ export interface IUser extends Document{
 
 	//powiązanie z lekarzem żeby było szybciej
 	doctorId?: mongoose.Types.ObjectId;
+	refreshToken?: string;
 }
 
 const UserSchema: Schema = new Schema({
@@ -34,6 +35,10 @@ const UserSchema: Schema = new Schema({
 	doctorId:{
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Doctor',
+		required: false
+	},
+	refreshToken: {
+		type: String,
 		required: false
 	}
 }, {
