@@ -28,7 +28,6 @@ export const addAbsence = async (request: Request, response: Response) => {
 		if(!doctorId || !startDate || !endDate) {
 			return response.status(400).json({message: "Doctor ID, startDate, endDate are required"});
 		}
-		// Weryfikacja: czy lekarz może dodać nieobecność tylko dla siebie
 		const userDoctorId = request.user?.doctorId;
 		if (!userDoctorId || doctorId.toString() !== userDoctorId.toString()) {
 			return response.status(403).json({message: "You can only add absences for your own schedule"});
@@ -42,14 +41,12 @@ export const addAbsence = async (request: Request, response: Response) => {
 			return response.status(404).json({message: "Unable to save absence into database"});
 		}
 
-		// Usuwamy wolne appointment w terminie absencji
 		await Appointment.deleteMany({
 			doctorId: doctorId,
 			date: {$gte: start, $lte: end},
 			status: "AVAILABLE"
 		})
 
-		// Aktualizacja appointment które są booked (na canceled)
 		await Appointment.updateMany({
 			doctorId: doctorId, 
 			date: {$gte: start, $lte: end},
@@ -82,7 +79,6 @@ export const removeAbsence = async (request: Request, response: Response) => {
 			return response.status(404).json({ message: "Absence not found" });
 		}
 
-		// Weryfikacja: czy nieobecność należy do zalogowanego lekarza
 		const userDoctorId = request.user?.doctorId;
 		if (!userDoctorId || absence.doctorId?.toString() !== userDoctorId.toString()) {
 			return response.status(403).json({message: "You can only remove your own absences"});

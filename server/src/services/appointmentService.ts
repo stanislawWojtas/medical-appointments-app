@@ -3,7 +3,6 @@ import Appointment from "../models/Appointment";
 
 export const getAppointmentsByDoctorAndDates = async (doctorId: string, startDate: string, endDate: string) => {
 
-	// Walidacja
 	if(!doctorId || !startDate || !endDate){
 		throw new Error("Missing required parameters")
 	}

@@ -255,7 +255,7 @@ const DoctorCalendar = ({doctorId, isDoctor, absences, onAbsenceRemoved}: Doctor
 									return d >= slotStart && d < slotEnd;
 								})
 								
-								// Sprawdź czy ten slot jest częścią większego appointmentu (BLOCKED)
+								// sprawdzenie czy ten slot jest częścią większego appointmentu (BLOCKED)
 								const isPartOfLongerAppointment = appointment && (appointment.status === 'BLOCKED' || (appointment.duration && appointment.duration > 1 && new Date(appointment.date).getTime() !== slotStart.getTime()));
 								
 								return(

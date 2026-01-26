@@ -19,7 +19,6 @@ const ReviewSchema: Schema = new Schema({
 	timestamps: true
 });
 
-// Index dla szybkiego wyszukiwania po doktorze
 ReviewSchema.index({ doctorId: 1, createdAt: -1 });
 
 const Review = mongoose.model<IReview>('Review', ReviewSchema);

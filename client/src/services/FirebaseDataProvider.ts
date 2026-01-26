@@ -8,7 +8,6 @@ import { deleteDoc, writeBatch, setDoc, updateDoc, Timestamp, orderBy } from "fi
 import type { Absence } from "../models/Absence";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 
-// TODO: zamplementowac metody firebase
 // klasa adapter do obsługi różnych backendów
 export class FirebaseDataProvider implements IDataProvider {
 
@@ -25,19 +24,15 @@ export class FirebaseDataProvider implements IDataProvider {
 		});
 	}
 
-	// Auth methods
 	async login(email: string, password: string): Promise<LoginResponse> {
 		try {
-			// Walidacja danych wejściowych
 			if (!email || !password) {
 				throw new Error("Email and password are required");
 			}
 
-			// Firebase Auth login
 			const userCredential = await signInWithEmailAndPassword(auth, email, password);
 			const firebaseUser = userCredential.user;
 
-			// Pobierz dane użytkownika z Firestore
 			const userDocRef = doc(db, "users", firebaseUser.uid);
 			const userDoc = await getDoc(userDocRef);
 
@@ -47,15 +42,12 @@ export class FirebaseDataProvider implements IDataProvider {
 
 			const userData = userDoc.data();
 
-			// Sprawdź czy użytkownik nie jest zablokowany
 			if (userData.isBlocked) {
 				throw new Error("Your account has been blocked");
 			}
 
-			// Pobierz token
 			const token = await firebaseUser.getIdToken();
 
-			// Jeśli to lekarz, pobierz dane lekarza (doctorId = userId)
 			let doctorData = null;
 			if (userData.role === 'DOCTOR') {
 				const doctorDocRef = doc(db, "doctors", firebaseUser.uid);
@@ -89,12 +81,10 @@ export class FirebaseDataProvider implements IDataProvider {
 		try {
 			const { email, password } = payload;
 
-			// Walidacja podstawowych danych
 			if (!email || !password) {
 				throw new Error("Email and password are required");
 			}
 
-			// Walidacja formatu email
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!emailRegex.test(email)) {
 				throw new Error("Invalid email format");
@@ -104,11 +94,9 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("Password must be at least 8 characters long");
 			}
 
-			// Utwórz użytkownika w Firebase Auth
 			const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 			const firebaseUser = userCredential.user;
 
-			// Publiczny endpoint rejestracji tworzy TYLKO pacjentów
 			await setDoc(doc(db, "users", firebaseUser.uid), {
 				email,
 				role: 'PATIENT',
@@ -129,7 +117,6 @@ export class FirebaseDataProvider implements IDataProvider {
 			const user = await this.getCurrentUser();
 			const userId = user.uid;
 
-			// Automatyczna zmiana statusu BOOKED -> COMPLETED dla wizyt które już minęły
 			const now = new Date();
 			const q = query(
 				collection(db, "appointments"),
@@ -154,14 +141,12 @@ export class FirebaseDataProvider implements IDataProvider {
 				await batch.commit();
 			}
 
-			// Pobierz zaktualizowane wizyty
 			const updatedSnapshot = await getDocs(q);
 			const appointments: Appointment[] = [];
 
 			for (const docSnapshot of updatedSnapshot.docs) {
 				const apt = docSnapshot.data();
 				
-				// Pobierz dane lekarza
 				let doctorData = null;
 				if (apt.doctorId) {
 					const doctorDoc = await getDoc(doc(db, "doctors", apt.doctorId));
@@ -189,7 +174,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				} as Appointment);
 			}
 
-			// Sortuj po dacie
 			appointments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 			return appointments;
@@ -245,7 +229,6 @@ export class FirebaseDataProvider implements IDataProvider {
 
 		await batch.commit();
 
-		// Pobierz utworzone dokumenty
 		const createdAppointments: Appointment[] = await Promise.all(
 			refs.map(async (ref) => {
 				const snapshot = await getDoc(ref);
@@ -267,7 +250,6 @@ export class FirebaseDataProvider implements IDataProvider {
 
 	async bookAppointment(appointmentId: string, patientData: PatientData, visitType: AppointmentType, duration: number): Promise<Appointment> {
 		
-		// transaction żeby sprawdzić czy przypadkiem wizyta nie jest już zarezerwowana
 		const updatedAppointment = await runTransaction(db, async (transaction) => {
 			const ref = doc(db, "appointments", appointmentId);
 			const snapshot = await transaction.get(ref);
@@ -279,7 +261,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("Appointment is not available");
 			}
 
-			// Mechanizm blokowania slotów gdy duration > 1
 			const slotsToBlock: Array<{ref: any, slot: Appointment}> = [];
 			if(duration > 1){
 				for(let i = 1; i < duration; i++){
@@ -305,7 +286,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				}
 			}
 
-			// Pobierz ID zalogowanego pacjenta
 			const user = await this.getCurrentUser();
 
 			transaction.update(ref, {
@@ -351,13 +331,11 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("Only booked appointments can be canceled");
 			}
 			
-			// Anuluj główny slot
 			transaction.update(ref, {
 				status: "CANCELED",
 				cancelReason: reason || null
 			});
 			
-			// Znajdź i anuluj zablokowane sloty
 			if (mainSlot.duration > 1) {
 				for (let i = 1; i < mainSlot.duration; i++) {
 					const nextTime = new Date(new Date(mainSlot.date).getTime() + i * 30 * 60000);
@@ -403,7 +381,6 @@ export class FirebaseDataProvider implements IDataProvider {
 			
 			const duration = mainSlot.duration;
 			
-			// Zwolnij główny slot
 			transaction.update(ref, {
 				status: "AVAILABLE",
 				patientData: null,
@@ -411,7 +388,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				duration: 1
 			});
 			
-			// Znajdź i zwolnij zablokowane sloty
 			if (duration > 1) {
 				for (let i = 1; i < duration; i++) {
 					const nextTime = new Date(new Date(mainSlot.date).getTime() + i * 30 * 60000);
@@ -461,7 +437,6 @@ export class FirebaseDataProvider implements IDataProvider {
 			reason
 		})
 
-		// pobranie appointments
 		const appointments = await this.getAppointments(doctorId, startDate, endDate);
 		const batch = writeBatch(db);
 		appointments.forEach(appointment => {
@@ -474,7 +449,6 @@ export class FirebaseDataProvider implements IDataProvider {
 		})
 		await batch.commit();
 
-		// Zwracamy utworzony absence
 		const snapshot = await getDoc(docRef);
 		if (!snapshot.exists()) {
 			throw new Error("Failed to retrieve created absence");
@@ -518,7 +492,6 @@ export class FirebaseDataProvider implements IDataProvider {
 			const user = await this.getCurrentUser();
 			const patientId = user.uid;
 
-			// Sprawdzenie czy użytkownik jest zablokowany
 			const userDoc = await getDoc(doc(db, "users", patientId));
 			if (!userDoc.exists()) {
 				throw new Error("User not found");
@@ -528,7 +501,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("You are blocked and cannot create reviews");
 			}
 
-			// sprawdzenie czy wizyta istnieje i należy do tego pacjenta
 			const appointmentDoc = await getDoc(doc(db, "appointments", reviewData.appointmentId));
 			if (!appointmentDoc.exists()) {
 				throw new Error("Appointment not found");
@@ -540,12 +512,10 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("You can only review your own appointments");
 			}
 
-			// Sprawdzenie czy wizyta jest completed
 			if (appointment.status !== 'COMPLETED') {
 				throw new Error("You can only review completed appointments");
 			}
 
-			// sprawdzenie czy nie ma już review dla tej wizyty
 			const existingReviewQuery = query(
 				collection(db, "reviews"),
 				where("appointmentId", "==", reviewData.appointmentId)
@@ -555,7 +525,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("You have already reviewed this appointment");
 			}
 
-			// Walidacja rating
 			if (reviewData.rating < 1 || reviewData.rating > 5) {
 				throw new Error("Rating must be between 1 and 5");
 			}
@@ -595,7 +564,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				...doc.data()
 			} as Review));
 
-			// Sortuj lokalnie po createdAt
 			reviews.sort((a, b) => {
 				const dateA = new Date(a.createdAt).getTime();
 				const dateB = new Date(b.createdAt).getTime();
@@ -659,17 +627,14 @@ export class FirebaseDataProvider implements IDataProvider {
 		}
 	}
 
-	// Admin operations
 	async registerDoctor(payload: RegisterDoctorPayload): Promise<void> {
 		try {
 			const { email, password, firstName, lastName, specialization, pricePerVisit } = payload;
 
-			// Walidacja podstawowych danych
 			if (!email || !password || !firstName || !lastName || !specialization) {
 				throw new Error("All fields are required for doctor registration");
 			}
 
-			// Walidacja formatu email
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!emailRegex.test(email)) {
 				throw new Error("Invalid email format");
@@ -679,11 +644,9 @@ export class FirebaseDataProvider implements IDataProvider {
 				throw new Error("Password must be at least 8 characters long");
 			}
 
-			// Użyj secondaryAuth żeby nie wylogować admina
 			const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
 			const firebaseUser = userCredential.user;
 
-			// Tworzymy użytkownika z rolą DOCTOR
 			await setDoc(doc(db, "users", firebaseUser.uid), {
 				email,
 				role: 'DOCTOR',
@@ -691,7 +654,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				createdAt: Timestamp.now()
 			});
 
-			// Tworzymy profil lekarza z tym samym ID co użytkownik
 			await setDoc(doc(db, "doctors", firebaseUser.uid), {
 				firstName: firstName,
 				lastName: lastName,
@@ -701,7 +663,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				reviewCount: 0
 			});
 
-			// Wyloguj nowo utworzonego użytkownika z secondaryAuth
 			await signOut(secondaryAuth);
 
 		} catch (error: any) {
@@ -721,7 +682,6 @@ export class FirebaseDataProvider implements IDataProvider {
 
 			const snapshot = await getDocs(q);
 
-			// Sortuj po dacie utworzenia po pobraniu
 			const patients = snapshot.docs.map(doc => ({
 				id: doc.id,
 				email: doc.data().email,
@@ -729,7 +689,6 @@ export class FirebaseDataProvider implements IDataProvider {
 				createdAt: doc.data().createdAt?.toDate().toISOString() || new Date().toISOString()
 			} as Patient));
 
-			// Sortuj lokalnie
 			patients.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
 			return patients;
@@ -774,15 +733,12 @@ export class FirebaseDataProvider implements IDataProvider {
 
 	async getAllDoctorsWithReviews(): Promise<DoctorWithReviews[]> {
 		try {
-			// Pobierz wszystkich lekarzy
 			const doctorsSnapshot = await getDocs(collection(db, "doctors"));
 			
-			// Dla każdego lekarza pobieramy jego komentarze
 			const doctorsWithReviews: DoctorWithReviews[] = await Promise.all(
 				doctorsSnapshot.docs.map(async (doctorDoc) => {
 					const doctorData = doctorDoc.data();
 					
-					// Pobierz reviews dla tego lekarza
 					const reviewsQuery = query(
 						collection(db, "reviews"),
 						where("doctorId", "==", doctorDoc.id)
@@ -790,7 +746,6 @@ export class FirebaseDataProvider implements IDataProvider {
 					
 					const reviewsSnapshot = await getDocs(reviewsQuery);
 					
-					// Dla każdej recenzji pobierz email pacjenta
 					const reviews: Review[] = await Promise.all(
 						reviewsSnapshot.docs.map(async (reviewDoc) => {
 							const reviewData = reviewDoc.data();
@@ -815,7 +770,6 @@ export class FirebaseDataProvider implements IDataProvider {
 						})
 					);
 
-					// Sortuj reviews lokalnie po createdAt
 					reviews.sort((a, b) => {
 						const dateA = new Date(a.createdAt).getTime();
 						const dateB = new Date(b.createdAt).getTime();

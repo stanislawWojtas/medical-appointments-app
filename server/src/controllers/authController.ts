@@ -24,13 +24,11 @@ export const register = async (request: Request, response: Response) => {
 	try{
 		const {email, password} = request.body;
 
-		// Walidacja podstawowych danych
 		if (!email || !password) {
 			await session.abortTransaction();
 			return response.status(400).json({message: "Email and password are required"});
 		}
 
-		// Walidacja formatu email
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(email)) {
 			await session.abortTransaction();
@@ -51,8 +49,6 @@ export const register = async (request: Request, response: Response) => {
 		const salt = await bcrypt.genSalt(10);
 		const hashedPass = await bcrypt.hash(password, salt);
 
-		// Publiczny endpoint rejestracji tworzy TYLKO pacjentów
-		// Rejestracja lekarzy jest dostępna tylko przez admin panel
 		const newUser = new User({
 			email,
 			password: hashedPass,
@@ -75,7 +71,6 @@ export const login = async (request: Request, response: Response) => {
 	try{
 		const {email, password} = request.body;
 
-		// Walidacja danych wejściowych
 		if (!email || !password) {
 			return response.status(400).json({message: "Email and password are required"});
 		}
@@ -89,20 +84,16 @@ export const login = async (request: Request, response: Response) => {
 			return response.status(400).json({message: "Invalid credentials"});
 		}
 
-		// Sprawdzenie czy JWT_SECRET istnieje
 		if (!process.env.JWT_SECRET) {
 			throw new Error("JWT_SECRET is not defined in environment variables");
 		}
 
-		//Wygenerowanie tokenów
 		const accessToken = generateAccessToken(user);
 		const refreshToken = generateRefreshToken();
 
-		// Zapisz refreshToken w bazie
 		user.refreshToken = refreshToken;
 		await user.save();
 
-		// Type assertion dla populated doctorId
 		const doctorData = user.doctorId as any;
 
 		return response.json({
@@ -129,16 +120,13 @@ export const refreshToken = async (request: Request, response: Response) => {
 			return response.status(400).json({ message: 'Refresh token is required' });
 		}
 
-		// Weryfikuj refreshToken
 		jwt.verify(refreshToken, process.env.JWT_SECRET!);
 
-		// Znajdź użytkownika z tym tokenem
 		const user = await User.findOne({ refreshToken }).populate('doctorId', 'firstName lastName');
 		if (!user) {
 			return response.status(403).json({ message: 'Invalid refresh token' });
 		}
 
-		// Generuj nowy accessToken
 		const newAccessToken = generateAccessToken(user);
 
 		return response.json({ accessToken: newAccessToken });
@@ -154,7 +142,6 @@ export const logout = async (request: Request, response: Response) => {
 			return response.status(400).json({ message: 'Refresh token is required' });
 		}
 
-		// Znajdź użytkownika i usuń refreshToken
 		const user = await User.findOneAndUpdate(
 			{ refreshToken },
 			{ $unset: { refreshToken: 1 } },

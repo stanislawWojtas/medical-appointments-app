@@ -21,7 +21,6 @@ type DayConfig = {
     end: string;
 };
 
-// Mapa dni: 0=Niedziela, 1=Poniedziałek, ... 6=Sobota (zgodnie z date-fns getDay)
 const INITIAL_CONFIG: Record<number, DayConfig> = {
     1: { active: true, start: "08:00", end: "16:00" }, // Poniedziałek
     2: { active: true, start: "08:00", end: "16:00" }, // Wtorek
@@ -43,16 +42,13 @@ const DAY_NAMES = [
 ];
 
 const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNewSlots}: AvailabilityModalProps) => {
-    // 1. Zakres dat (np. "Ustaw grafik na Czerwiec")
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
     const todayIso = new Date().toISOString().split('T')[0];
 
-    // 2. Konfiguracja dni tygodnia
     const [daysConfig, setDaysConfig] = useState(INITIAL_CONFIG);
 
-    // Helper do aktualizacji konfiguracji konkretnego dnia
     const updateDayConfig = (dayIndex: number, field: keyof DayConfig, value: any) => {
         setDaysConfig(prev => ({
             ...prev,
@@ -60,7 +56,6 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
         }));
     };
 
-	// TODO: Można tą funkcję przenieść do backendu potem
     const handleGenerate = async () => {
         if (!startDate || !endDate) return;
 
@@ -68,14 +63,12 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
         const end = new Date(endDate);
         const creationPromises: Promise<Appointment | undefined>[] = [];
 
-        // 3. Iterujemy przez każdy dzień w wybranym zakresie
         const daysInRange = eachDayOfInterval({ start, end });
 
         daysInRange.forEach((currentDate) => {
             const dayOfWeek = getDay(currentDate); // 0 (Sun) - 6 (Sat)
             const config = daysConfig[dayOfWeek];
 
-            // Jeśli lekarz pracuje w ten dzień tygodnia
             if (config.active) {
                 const [sh, sm] = config.start.split(":").map(Number);
                 const [eh, em] = config.end.split(":").map(Number);
@@ -83,7 +76,6 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
                 let slotTime = setMinutes(setHours(currentDate, sh), sm);
                 const endTime = setMinutes(setHours(currentDate, eh), em);
 
-                // Generuj sloty co 30 min dla tego dnia
                 while (slotTime < endTime) {
                     creationPromises.push(createAvailability(doctorId, new Date(slotTime)));
                     slotTime = addMinutes(slotTime, 30);
@@ -99,12 +91,10 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
         onOpenChange({ open: false });
     };
 
-    // Renderowanie wiersza dla dnia tygodnia
-    // Kolejność: Pon(1) -> Sob(6) -> Ndz(0) dla lepszego UX
     const orderedDays = [1, 2, 3, 4, 5, 6, 0]; 
 
     return (
-        <Dialog.Root open={open} onOpenChange={onOpenChange} size="lg"> {/* Szerszy modal */}
+        <Dialog.Root open={open} onOpenChange={onOpenChange} size="lg"> 
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content>
@@ -113,7 +103,6 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
                     </Dialog.Header>
                     <Dialog.Body>
                         <Stack gap={6}>
-                            {/* SEKCJA 1: Zakres dat */}
                             <Box>
                                 <Text fontWeight="bold" mb={2}>1. Select the validity period for the schedule:</Text>
                                 <Flex gap={4}>
@@ -130,13 +119,11 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
 
                             <Separator />
 
-                            {/* SEKCJA 2: Konfiguracja dni */}
                             <Box>
                                 <Text fontWeight="bold" mb={2}>2. Select working hours:</Text>
                                 <Stack gap={2}>
                                     {orderedDays.map(dayIndex => (
                                         <Flex key={dayIndex} align="center" gap={3}>
-                                            {/* Checkbox "Czy pracuję" */}
                                             <Checkbox.Root 
                                                 checked={daysConfig[dayIndex].active}
                                                 onCheckedChange={(e) => updateDayConfig(dayIndex, 'active', !!e.checked)}
@@ -148,7 +135,6 @@ const AvailabilityModal = ({ open, onOpenChange, doctorId, onSuccess , handleNew
                                                 </Checkbox.Label>
                                             </Checkbox.Root>
 
-                                            {/* Godziny - aktywne tylko jeśli checkbox zaznaczony */}
                                             <Flex gap={2} opacity={daysConfig[dayIndex].active ? 1 : 0.3}>
                                                 <Input 
                                                     type="time" 

@@ -7,7 +7,7 @@ import { NodeDataProvider } from "./NodeJsDataProvider";
 
 // TUTAJ ZMIENIA SIĘ BACKEND NODE JS LUB FIREBASE
 // ====================================================================
-const USE_FIREBASE = false;
+const USE_FIREBASE = true;
 // ====================================================================
 
 const dataProvider: IDataProvider = USE_FIREBASE ? new FirebaseDataProvider() : new NodeDataProvider();
@@ -68,7 +68,6 @@ export const cancelAppointmentByPatient = async (appointmentId: string) => {
 
 // TODO: potem dodaj wysyłanie powiadomień do użytkowników którym anulowano wizyte
 export const addAbsence = async (doctorId: string, startDate: Date, endDate: Date, reason?: string) => {
-	// zamiana żeby nieobecność obejmowała całe dni
 	startDate = startOfDay(startDate);
 	endDate = endOfDay(endDate);
 	return await dataProvider.addAbsence(doctorId, startDate, endDate, reason);

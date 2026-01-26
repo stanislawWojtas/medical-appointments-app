@@ -34,12 +34,10 @@ const HomePage = () => {
 	useEffect(() => {
 		let result = doctors;
 
-		// Filtrowanie po specjalizacji
 		if (selectedSpecialization !== "ALL") {
 			result = result.filter(doc => doc.specialization === selectedSpecialization);
 		}
 
-		// Wyszukiwanie po imieniu/nazwisku
 		if (searchQuery) {
 			result = result.filter(doc => 
 				`${doc.firstName} ${doc.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
@@ -49,14 +47,12 @@ const HomePage = () => {
 		setFilteredDoctors(result);
 	}, [searchQuery, selectedSpecialization, doctors]);
 
-	// Unikalne specjalizacje
 	const specializations = Array.from(new Set(doctors.map(d => d.specialization)));
 
 	return (
 		<Box p={6}>
 			<Heading mb={6}>Available Doctors</Heading>
 			
-			{/* Filtry i wyszukiwanie */}
 			<Box mb={6} p={4} borderWidth="1px" borderRadius="lg" bg="gray.50">
 				<Stack gap={4}>
 					<Box>
@@ -92,7 +88,6 @@ const HomePage = () => {
 				</Stack>
 			</Box>
 
-			{/* Lista lekarzy */}
 			{isLoading ? (
 				<Text>Loading doctors...</Text>
 			) : (

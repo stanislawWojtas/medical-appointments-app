@@ -22,10 +22,8 @@ export interface Appointment {
 	status: AppointmentStatus;
 	type?: AppointmentType;
 
-	// dane pacjenta
 	patientData?: PatientData;
 	
-	// informacje o lekarzu (populated)
 	doctor?: {
 		firstName: string;
 		lastName: string;

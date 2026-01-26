@@ -4,9 +4,9 @@ export interface User {
 	id: string;
 	email: string;
 	role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
-	doctorId?: string; // Jeśli jest lekarzem
-	firstName?: string; // Imię lekarza
-	lastName?: string; // Nazwisko lekarza
+	doctorId?: string; 
+	firstName?: string; 
+	lastName?: string; 
 }
 
 interface AuthContextType {

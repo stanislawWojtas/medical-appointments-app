@@ -17,7 +17,7 @@ let failedQueue: Array<{
 	reject: (error?: any) => void;
 }> = [];
 
-// Funkcja do przetwarzania kolejki
+// obsługa kolejki
 const processQueue = (error: any, token: string | null = null) => {
 	failedQueue.forEach(({ resolve, reject }) => {
 		if (error) {
@@ -52,7 +52,7 @@ api.interceptors.response.use(
 
 		if (error.response?.status === 401 && !originalRequest._retry) {
 			if (isRefreshing) {
-				// Jeśli już odświeżamy, dodaj do kolejki
+			
 				return new Promise((resolve, reject) => {
 					failedQueue.push({ resolve, reject });
 				}).then((token) => {
@@ -68,7 +68,7 @@ api.interceptors.response.use(
 
 			const refreshToken = localStorage.getItem('refreshToken');
 			if (!refreshToken) {
-				// Brak refresh tokena, wyloguj
+				// wylogowanie jeśli nie ma user refresh tokena
 				localStorage.removeItem('token');
 				localStorage.removeItem('refreshToken');
 				localStorage.removeItem('user');
@@ -77,7 +77,7 @@ api.interceptors.response.use(
 			}
 
 			try {
-				// Odśwież token
+				// odswiezenie tokena
 				const response = await axios.post(`${BASE_URL}/api/auth/refresh-token`, {
 					refreshToken
 				});
@@ -85,17 +85,13 @@ api.interceptors.response.use(
 				const { accessToken } = response.data;
 				localStorage.setItem('token', accessToken);
 
-				// Zaktualizuj nagłówek w instancji axios
 				api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
-				// Przetwórz kolejkę
 				processQueue(null, accessToken);
 
-				// Ponów oryginalne zapytanie
 				originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 				return api(originalRequest);
 			} catch (refreshError) {
-				// Odświeżenie nie powiodło się, wyloguj
 				processQueue(refreshError, null);
 				localStorage.removeItem('token');
 				localStorage.removeItem('refreshToken');

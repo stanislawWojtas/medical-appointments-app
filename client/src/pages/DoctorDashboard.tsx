@@ -2,7 +2,6 @@ import { Box, Button, Flex, Text, useDisclosure } from "@chakra-ui/react";
 import DoctorCalendar from "../components/DoctorCalendar";
 import AbsenceModal from "../components/AbsenceModal";
 import AvailabilityModal from "../components/AvailabilityModal";
-import type { Appointment } from "../models/Appointment";
 import { addAbsence, getAbsences } from "../services/consultationService";
 import { useEffect, useState } from "react";
 import type { Absence } from "../models/Absence";
@@ -12,7 +11,6 @@ const DoctorDashboard = () => {
 
 	const { user } = useAuth();
 	const doctorId = user?.doctorId || '';
-	// modale: osobne sterowanie dla nieobecności i dostępności
 	const { open: isAbsenceOpen, onOpen: onAbsenceOpen, onClose: onAbsenceClose } = useDisclosure();
 	const { open: isAvailabilityOpen, setOpen: setAvailabilityOpen, onOpen: onAvailabilityOpen } = useDisclosure();
 
@@ -31,14 +29,13 @@ const DoctorDashboard = () => {
 		fetchAbsences();
 	}, [])
 
+	//odświeżenie kalendarza po dodaniu nowych slotów
 	const handleNewSlots = () => {
-		// Odśwież kalendarz po dodaniu nowych slotów
 		setRefreshKey(prev => prev + 1);
 	}
 	const handleNewAbsence = async (startDate: Date, endDate: Date, reason?: string) => {
 		try{
 			const newAbsence = await addAbsence(doctorId, startDate, endDate, reason);
-			// dodaj nowy absence do state'u zamiast pobierać wszystkie ponownie
 			setAbsences(prev => [...prev, newAbsence]);
 		}catch(error){
 			console.log("Failed to add absence: ", error)
@@ -69,7 +66,6 @@ const DoctorDashboard = () => {
 					onAbsenceRemoved={handleAbsenceRemoved}
 				/>
 			</Box>
-			{/* modals */}
 			<AbsenceModal isOpen={isAbsenceOpen} onClose={onAbsenceClose} onSuccess={handleNewAbsence}/>
 			<AvailabilityModal
 				doctorId={doctorId}

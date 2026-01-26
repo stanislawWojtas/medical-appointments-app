@@ -11,7 +11,6 @@ import PatientSideBar from "../components/PatientSideBar";
 const MainLayout = () => {
 	const { user, isAuthenticated } = useAuth();
 
-	// Określ, czy wyświetlać sidebar i jaki typ
 	const showSidebar = isAuthenticated && user;
 	const isDoctor = user?.role === 'DOCTOR';
 

@@ -13,13 +13,11 @@ export const registerDoctor = async (request: Request, response: Response) => {
 	try {
 		const { email, password, firstName, lastName, specialization, pricePerVisit } = request.body;
 
-		// Walidacja podstawowych danych
 		if (!email || !password || !firstName || !lastName || !specialization) {
 			await session.abortTransaction();
 			return response.status(400).json({ message: "All fields are required for doctor registration" });
 		}
 
-		// Walidacja formatu email
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(email)) {
 			await session.abortTransaction();
@@ -40,7 +38,6 @@ export const registerDoctor = async (request: Request, response: Response) => {
 		const salt = await bcrypt.genSalt(10);
 		const hashedPass = await bcrypt.hash(password, salt);
 
-		// Tworzymy profil lekarza
 		const newDoctor = new Doctor({
 			firstName,
 			lastName, 
@@ -49,7 +46,6 @@ export const registerDoctor = async (request: Request, response: Response) => {
 		});
 		const savedDoctor = await newDoctor.save({ session });
 
-		// Tworzymy użytkownika z rolą DOCTOR
 		const newUser = new User({
 			email,
 			password: hashedPass,
@@ -78,7 +74,6 @@ export const registerDoctor = async (request: Request, response: Response) => {
 	}
 };
 
-// Pobierz wszystkich pacjentów
 export const getAllPatients = async (_request: Request, response: Response) => {
 	try {
 		const patients = await User.find({ role: 'PATIENT' })
@@ -91,7 +86,6 @@ export const getAllPatients = async (_request: Request, response: Response) => {
 	}
 };
 
-// Zablokuj użytkownika
 export const blockUser = async (request: Request, response: Response) => {
 	try {
 		const { userId } = request.params;
@@ -117,7 +111,6 @@ export const blockUser = async (request: Request, response: Response) => {
 	}
 };
 
-// Odblokuj użytkownika
 export const unblockUser = async (request: Request, response: Response) => {
 	try {
 		const { userId } = request.params;
@@ -139,7 +132,6 @@ export const unblockUser = async (request: Request, response: Response) => {
 	}
 };
 
-// Pobierz wszystkich lekarzy wraz z ich komentarzami
 export const getAllDoctorsWithReviews = async (_request: Request, response: Response) => {
 	try {
 		const doctors = await Doctor.find().lean();

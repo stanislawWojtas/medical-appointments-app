@@ -97,7 +97,6 @@ function App() {
           } />
         </Route>
 
-        {/* 404 - strona nie znaleziona */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>   
     </>

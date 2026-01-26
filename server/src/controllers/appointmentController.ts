@@ -27,7 +27,6 @@ export const addAvaibility = async (request: Request, response: Response) => {
             return response.status(400).json({message: "Invalid input: expected non-empty array of appointments"});
         }
 
-        // Weryfikacja: czy wszystkie sloty należą do zalogowanego lekarza
         const userDoctorId = request.user?.doctorId;
         if (!userDoctorId) {
             return response.status(403).json({message: "Doctor ID not found in user profile"});
@@ -57,7 +56,6 @@ export const removeAppointment = async (request: Request, response: Response) =>
             return response.status(400).json({message: "Appointment ID is required"})
         };
 
-        // Weryfikacja: czy wizyta należy do zalogowanego lekarza
         const appointment = await Appointment.findById(id);
         if (!appointment) {
             return response.status(404).json({message: "Appointment not found"});
@@ -95,7 +93,6 @@ export const cancelAppointmentByDoctor = async(request: Request, response: Respo
             return response.status(404).json({message: "Appointment not found"});
         }
 
-        // Weryfikacja: czy wizyta należy do zalogowanego lekarza
         const userDoctorId = request.user?.doctorId;
         if (!userDoctorId || mainSlot.doctorId?.toString() !== userDoctorId.toString()) {
             await session.abortTransaction();
@@ -111,7 +108,6 @@ export const cancelAppointmentByDoctor = async(request: Request, response: Respo
         if(reason) mainSlot.cancelReason = reason;
         await mainSlot.save({session})
 
-        // handling spotkań dłuższych niż 30 minut
         if(mainSlot.duration > 1){
             for(let i = 1; i < mainSlot.duration; i++){
                 const nextTime = new Date(mainSlot.date.getTime() + i * 30 * 60000);
@@ -275,7 +271,6 @@ export const getMyAppointments = async (request: Request, response: Response) =>
             return response.status(401).json({ message: "User not authenticated" });
         }
 
-        // Automatyczna zmiana statusu BOOKED -> COMPLETED dla wizyt które już minęły
         const now = new Date();
         await Appointment.updateMany(
             {

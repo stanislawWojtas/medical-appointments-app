@@ -106,7 +106,7 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
             } catch (error: unknown) {
                 console.error(error);
                 
-                // Wyciągięcie informacji o błędzie z backendu jeśli jest
+                // wyciagniecie informacji o bledzie z backendu jezeli istnieje
                 const status = (error as any).response?.status;
                 const message = (error as any).response?.data?.message || (error as any).response?.data?.error || (error as Error).message;
                 
@@ -147,7 +147,6 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
                     <DialogCloseTrigger onClick={handleClose} />
                     
                     <DialogBody>
-                        {/* --- KROK 1: FORMULARZ DANYCH --- */}
                         {currentStep === 'FORM' && (
                             <Stack gap={4}>
                                 <Stack gap={1}>
@@ -223,7 +222,6 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
                             </Stack>
                         )}
 
-                        {/* --- KROK 2: FAKE PŁATNOŚĆ --- */}
                         {currentStep === 'PAYMENT' && (
                             <Stack gap={5}>
                                 {errorMessage && (
@@ -290,7 +288,6 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
                             </Stack>
                         )}
 
-                        {/* --- KROK 3: SPINNER --- */}
                         {currentStep === 'PROCESSING' && (
                             <Center flexDirection="column" py={10} gap={4}>
                                 <Spinner size="xl" color="blue.500" />
@@ -299,7 +296,6 @@ const ReservationModal = ({isOpen, onClose, appointmentId, onSuccess, price = 15
                             </Center>
                         )}
 
-                        {/* --- KROK 4: SUKCES --- */}
                         {currentStep === 'SUCCESS' && (
                             <Center flexDirection="column" py={5} gap={2}>
                                 <Text fontSize="4xl">✅</Text>

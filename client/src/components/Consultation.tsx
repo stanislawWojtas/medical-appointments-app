@@ -28,7 +28,6 @@ const Consultation = ({a, isDoctor, handlePatientClick, handleRemoveAvailability
     const isPast:boolean = new Date(a.date) < new Date();
     const height = `calc(${a.duration * 100}% - 8px)`; // 4px dla padding/margines
     
-    // Sprawdź czy wizyta należy do zalogowanego pacjenta
     const isMyAppointment = !isDoctor && a.patientId === user?.id;
 
     const getTypeColor = (type?: AppointmentType) => {

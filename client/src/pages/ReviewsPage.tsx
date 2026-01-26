@@ -18,7 +18,6 @@ const ReviewsPage = () => {
 			await fetchStats();
 		};
 		loadData();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [doctorId]);
 
 	const fetchReviews = async () => {
@@ -118,7 +117,7 @@ const ReviewsPage = () => {
 				</Card.Root>
 			)}
 
-			{/* Lista recenzji */}
+			{/* lista recenzji */}
 			{reviews.length === 0 ? (
 				<Box textAlign="center" py={10}>
 					<Text color="gray.500" fontSize="lg">No reviews yet</Text>

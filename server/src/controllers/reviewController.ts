@@ -3,7 +3,7 @@ import Review from '../models/Review';
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import mongoose from "mongoose";
-import '../middleware/authMiddleware'; // Import aby załadować rozszerzenie typu Request
+import '../middleware/authMiddleware'; 
 
 export const createReview = async (request: Request, response: Response) => {
 	try {
@@ -14,7 +14,6 @@ export const createReview = async (request: Request, response: Response) => {
 			return response.status(401).json({ message: "Unauthorized" });
 		}
 
-		// Sprawdzenie czy użytkownik jest zablokowany
 		const user = await User.findById(patientId);
 		if (!user) {
 			return response.status(404).json({ message: "User not found" });
@@ -24,7 +23,6 @@ export const createReview = async (request: Request, response: Response) => {
 			return response.status(403).json({ message: "You are blocked and cannot create reviews" });
 		}
 
-		// sprawdzenie czy wizyta istnieje i należy do tego pacjenta
 		const appointment = await Appointment.findById(appointmentId);
 		if (!appointment) {
 			return response.status(404).json({ message: "Appointment not found" });
@@ -34,18 +32,15 @@ export const createReview = async (request: Request, response: Response) => {
 			return response.status(403).json({ message: "You can only review your own appointments" });
 		}
 
-		// Sprawdzenie czy wizyta jest completed
 		if (appointment.status !== 'COMPLETED') {
 			return response.status(400).json({ message: "You can only review completed appointments" });
 		}
 
-		// sprawdzenie czy nie ma już review dla tej wizyty
 		const existingReview = await Review.findOne({ appointmentId });
 		if (existingReview) {
 			return response.status(400).json({ message: "You have already reviewed this appointment" });
 		}
 
-		// Walidacja rating
 		if (rating < 1 || rating > 5) {
 			return response.status(400).json({ message: "Rating must be between 1 and 5" });
 		}
@@ -77,7 +72,6 @@ export const getReviewsByDoctor = async (request: Request, response: Response) =
 			return response.status(400).json({ message: "Invalid doctor ID" });
 		}
 
-		// Nie populate patientId - lekarz nie widzi kto wystawił opinię (anonimowe recenzje)
 		const reviews = await Review.find({ doctorId: doctorId })
 			.sort({ createdAt: -1 });
 
@@ -138,7 +132,6 @@ export const getReviewStats = async (request: Request, response: Response) => {
 	}
 };
 
-// Usuń recenzję (tylko admin)
 export const deleteReview = async (request: Request, response: Response) => {
 	try {
 		const { reviewId } = request.params;

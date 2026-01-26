@@ -31,7 +31,6 @@ export const verifyToken = (request: Request, response: Response, next: NextFunc
 		return;
 	}
 
-	// Sprawdzenie czy JWT_SECRET istnieje
 	if (!process.env.JWT_SECRET) {
 		response.status(500).json({ message: "JWT_SECRET is not configured" });
 		return;

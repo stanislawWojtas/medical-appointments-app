@@ -21,10 +21,10 @@ export const LoginPage = () => {
 		try {
 			const { accessToken, refreshToken, user } = await consultationService.login(email, password);
 			
-			// Zapisujemy tokeny i dane użytkownika
+			// zapisanie tokenów użytkownika
 			login(accessToken, refreshToken, user);
 			
-			// Przekierowanie w zależności od roli
+			// przekierowanie w zależności od roli
 			if (user.role === 'DOCTOR') {
 				navigate('/doctor-dashboard');
 			} else if (user.role === 'PATIENT') {

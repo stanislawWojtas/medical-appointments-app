@@ -34,12 +34,10 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# --- Pliki lokalne Lab 10/11 ---
 # Opcjonalnie: Jeśli Twój lokalny plik JSON (Lab 10) zmienia się
 # przy każdym kliknięciu w aplikacji i nie chcesz tych zmian w historii Gita,
 # możesz go tu dodać. Ale zazwyczaj lepiej go zostawić, żeby prowadzący miał dane startowe.
 # *.json 
 
-# --- Firebase (Lab 11) ---
 .firebase/
 firebase-debug.log
